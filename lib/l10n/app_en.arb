@@ -1,0 +1,1408 @@
+{
+  "@@locale": "en",
+  "appTitle": "AroggyaPath",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "welcome": "Welcome",
+  "@welcome": {
+    "description": "A welcome message"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings label"
+  },
+  "changeLanguage": "Change Language",
+  "@changeLanguage": {
+    "description": "Label for changing language"
+  },
+  "english": "English",
+  "@english": {
+    "description": "English language name"
+  },
+  "arabic": "Arabic",
+  "@arabic": {
+    "description": "Arabic language name"
+  },
+  "selectLanguage": "Select Language",
+  "@selectLanguage": {
+    "description": "Title for language selection dialog"
+  },
+  "french": "French",
+  "@french": {
+    "description": "French language name"
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Navigation label for Home"
+  },
+  "navAppointments": "Appointments",
+  "@navAppointments": {
+    "description": "Navigation label for Appointments"
+  },
+  "navReels": "Reels",
+  "@navReels": {
+    "description": "Navigation label for Reels"
+  },
+  "navMessages": "Messages",
+  "@navMessages": {
+    "description": "Navigation label for Messages"
+  },
+  "navProfile": "Profile",
+  "@navProfile": {
+    "description": "Navigation label for Profile"
+  },
+  "personalInfo": "Personal Info",
+  "@personalInfo": {
+    "description": "Profile menu item for Personal Info"
+  },
+  "myAppointment": "My Appointment",
+  "@myAppointment": {
+    "description": "Profile menu item for My Appointment"
+  },
+  "myDependents": "My Dependents",
+  "@myDependents": {
+    "description": "Profile menu item for My Dependents"
+  },
+  "appointmentSetting": "Appointment Setting",
+  "@appointmentSetting": {
+    "description": "Profile menu item for Appointment Setting"
+  },
+  "myEarning": "My Earning",
+  "@myEarning": {
+    "description": "Profile menu item for My Earning"
+  },
+  "changePasswordLabel": "Change Password",
+  "@changePasswordLabel": {
+    "description": "Profile menu item for Change Password"
+  },
+  "helpSupport": "Help & Support",
+  "@helpSupport": {
+    "description": "Profile menu item for Help & Support"
+  },
+  "logOut": "Log Out",
+  "@logOut": {
+    "description": "Profile menu item for Log Out"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "General loading text"
+  },
+  "checkingAuth": "Checking authentication",
+  "@checkingAuth": {
+    "description": "Text shown when checking login status"
+  },
+  "invalidSession": "Invalid Session",
+  "@invalidSession": {
+    "description": "Title for invalid session screen"
+  },
+  "sessionExpiredMessage": "Your session is invalid.\nPlease login again.",
+  "@sessionExpiredMessage": {
+    "description": "Message for expired session"
+  },
+  "goToLogin": "Go to Login",
+  "@goToLogin": {
+    "description": "Button to navigate to login"
+  },
+  "searchDoctorHint": "Search Doctor...",
+  "@searchDoctorHint": {
+    "description": "Hint text for doctor search field"
+  },
+  "locationServicesDisabledTitle": "Location Services Disabled",
+  "@locationServicesDisabledTitle": {
+    "description": "Title for location services disabled dialog"
+  },
+  "locationServicesDisabledMessage": "Location services are disabled. Please enable them to see nearby doctors.",
+  "@locationServicesDisabledMessage": {
+    "description": "Message for location services disabled dialog"
+  },
+  "locationPermissionRequiredTitle": "Location Permission Required",
+  "@locationPermissionRequiredTitle": {
+    "description": "Title for location permission required dialog"
+  },
+  "locationPermissionRequiredMessage": "Location permission is required to show nearby doctors. Please grant permission in app settings.",
+  "@locationPermissionRequiredMessage": {
+    "description": "Message for location permission required dialog"
+  },
+  "openSettings": "Open Settings",
+  "@openSettings": {
+    "description": "Button to open app/location settings"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "General cancel button"
+  },
+  "loadingRoute": "Loading route...",
+  "@loadingRoute": {
+    "description": "Text shown when loading map route"
+  },
+  "directionsApiDisabled": "Directions API not enabled. Using straight line route.",
+  "@directionsApiDisabled": {
+    "description": "Message shown when directions API is unavailable"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button label"
+  },
+  "loadingMap": "Loading map...",
+  "@loadingMap": {
+    "description": "Text shown while map is loading"
+  },
+  "distance": "Distance",
+  "@distance": {
+    "description": "Label for distance"
+  },
+  "upcomingAppointment": "Upcoming Appointment",
+  "@upcomingAppointment": {
+    "description": "Section header for upcoming appointments"
+  },
+  "nearbyDoctors": "Nearby Doctors",
+  "@nearbyDoctors": {
+    "description": "Section header for nearby doctors"
+  },
+  "seeAll": "See All",
+  "@seeAll": {
+    "description": "Button to see all items"
+  },
+  "noDoctorsFound": "No doctors found",
+  "@noDoctorsFound": {
+    "description": "Message shown when no doctors match criteria"
+  },
+  "available": "Available",
+  "@available": {
+    "description": "Doctor availability status"
+  },
+  "noSchedule": "No Schedule",
+  "@noSchedule": {
+    "description": "Doctor unavailable status"
+  },
+  "videoConsultation": "Video Consultation",
+  "@videoConsultation": {
+    "description": "Label for video consultation availability"
+  },
+  "bookNow": "Book Now",
+  "@bookNow": {
+    "description": "Button to book an appointment"
+  },
+  "notAvailable": "Not Available",
+  "@notAvailable": {
+    "description": "Status when booking is unavailable"
+  },
+  "noScheduleSet": "No schedule set",
+  "@noScheduleSet": {
+    "description": "Message when doctor has no schedule"
+  },
+  "searchFailed": "Search failed: {error}",
+  "@searchFailed": {
+    "description": "Error message when search fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionExpiredTitle": "Session Expired",
+  "@sessionExpiredTitle": {
+    "description": "Title for session expired dialog"
+  },
+  "sessionExpiredMessageDoc": "Your session has expired. Please login again.",
+  "@sessionExpiredMessageDoc": {
+    "description": "Message for session expired dialog"
+  },
+  "ok": "OK",
+  "@ok": {
+    "description": "OK button text"
+  },
+  "failedLoadPosts": "Failed to load posts",
+  "@failedLoadPosts": {
+    "description": "Error message for post loading"
+  },
+  "connectionError": "Connection error. Please try again.",
+  "@connectionError": {
+    "description": "General connection error message"
+  },
+  "searchHintDoctor": "Search doctors, posts, specialties...",
+  "@searchHintDoctor": {
+    "description": "Hint text for search field in doctor home"
+  },
+  "suggestions": "Suggestions",
+  "@suggestions": {
+    "description": "Title for search suggestions"
+  },
+  "searching": "Searching...",
+  "@searching": {
+    "description": "Loading text during search"
+  },
+  "searchAnything": "Search for anything",
+  "@searchAnything": {
+    "description": "Empty state title for search"
+  },
+  "findEverything": "Find doctors, posts, or specialties",
+  "@findEverything": {
+    "description": "Empty state subtitle for search"
+  },
+  "noResultsFound": "No results found",
+  "@noResultsFound": {
+    "description": "Message when no search results match"
+  },
+  "tryDifferentKeywords": "Try searching with different keywords",
+  "@tryDifferentKeywords": {
+    "description": "Advice for empty search results"
+  },
+  "posts": "Posts",
+  "@posts": {
+    "description": "Title for posts section"
+  },
+  "noPostsYet": "No posts yet. Be the first to share!",
+  "@noPostsYet": {
+    "description": "Message when post list is empty"
+  },
+  "shareInsights": "Share your insights with fellow doctors...",
+  "@shareInsights": {
+    "description": "Hint text in create post box"
+  },
+  "photo": "Photo",
+  "@photo": {
+    "description": "Label for photo action"
+  },
+  "video": "Video",
+  "@video": {
+    "description": "Label for video action"
+  },
+  "reels": "Reels",
+  "@reels": {
+    "description": "Label for reels action"
+  },
+  "createPost": "Create a Post",
+  "@createPost": {
+    "description": "Button to navigate to post creation"
+  },
+  "yearsExperience": "{years} years of experience",
+  "@yearsExperience": {
+    "description": "Experience years label",
+    "placeholders": {
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "noBioAvailable": "No bio available",
+  "@noBioAvailable": {
+    "description": "Fallback text for doctor bio"
+  },
+  "message": "Message",
+  "@message": {
+    "description": "Button text to message a doctor"
+  },
+  "welcomeBack": "Welcome back",
+  "@welcomeBack": {
+    "description": "Welcome message title"
+  },
+  "loginToAccountAs": "Please Login to your Account as {userType}",
+  "@loginToAccountAs": {
+    "description": "Login subtitle with user type",
+    "placeholders": {
+      "userType": {
+        "type": "String"
+      }
+    }
+  },
+  "emailAddress": "Email Address",
+  "@emailAddress": {
+    "description": "Label for email field"
+  },
+  "emailHint": "you@gmail.com",
+  "@emailHint": {
+    "description": "Hint text for email field"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Label for password field"
+  },
+  "passwordHint": "****************",
+  "@passwordHint": {
+    "description": "Hint text for password field"
+  },
+  "forgotPassword": "Forgot Password?",
+  "@forgotPassword": {
+    "description": "Text for forgot password link"
+  },
+  "signIn": "Sign in",
+  "@signIn": {
+    "description": "Button text for sign in"
+  },
+  "dontHaveAccount": "Don't have an account? ",
+  "@dontHaveAccount": {
+    "description": "Text before signup link"
+  },
+  "signup": "Signup",
+  "@signup": {
+    "description": "Text for signup link"
+  },
+  "welcomeBackUser": "Welcome back, {userName}!",
+  "@welcomeBackUser": {
+    "description": "Success message after login",
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidAccountType": "Invalid account type",
+  "@invalidAccountType": {
+    "description": "Error message for wrong account type"
+  },
+  "accountRegisteredAs": "This account is registered as {role}. Please use the correct login option.",
+  "@accountRegisteredAs": {
+    "description": "Error message when role doesn't match",
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "loginFailed": "Login failed. Please check your credentials.",
+  "@loginFailed": {
+    "description": "General login failure message"
+  },
+  "enterEmail": "Please enter your email",
+  "@enterEmail": {
+    "description": "Validation error for empty email"
+  },
+  "createAccount": "Create {userType} Account",
+  "@createAccount": {
+    "description": "Title for signup screen",
+    "placeholders": {
+      "userType": {
+        "type": "String"
+      }
+    }
+  },
+  "fillDetails": "Please fill in the details below",
+  "@fillDetails": {
+    "description": "Subtitle for signup screen"
+  },
+  "fullName": "Full Name *",
+  "@fullName": {
+    "description": "Label for full name field"
+  },
+  "enterFullName": "Enter your full name",
+  "@enterFullName": {
+    "description": "Hint text for full name field"
+  },
+  "emailAddressStar": "Email Address *",
+  "@emailAddressStar": {
+    "description": "Label for email field with asterisk"
+  },
+  "emailExample": "you@example.com",
+  "@emailExample": {
+    "description": "Hint text for email field"
+  },
+  "invalidEmail": "Please enter a valid email",
+  "@invalidEmail": {
+    "description": "Validation error for invalid email"
+  },
+  "medicalLicenseNumber": "Medical License Number *",
+  "@medicalLicenseNumber": {
+    "description": "Label for medical license field"
+  },
+  "enterLicenseNumber": "Enter License Number",
+  "referralCode": "Referral Code",
+  "enterReferralCode": "Enter Referral Code",
+  "@enterLicenseNumber": {
+    "description": "Hint text for medical license field"
+  },
+  "medicalSpecialty": "Medical Specialty *",
+  "@medicalSpecialty": {
+    "description": "Label for medical specialty field"
+  },
+  "selectSpecialty": "Select your specialty",
+  "@selectSpecialty": {
+    "description": "Hint text for medical specialty field"
+  },
+  "yearsExperienceStar": "Years of Experience *",
+  "@yearsExperienceStar": {
+    "description": "Label for experience years field"
+  },
+  "yearsExperienceExample": "e.g., 5",
+  "@yearsExperienceExample": {
+    "description": "Hint text for experience years field"
+  },
+  "passwordStar": "Password *",
+  "@passwordStar": {
+    "description": "Label for password field with asterisk"
+  },
+  "passwordLength": "At least 6 characters",
+  "@passwordLength": {
+    "description": "Description for password field"
+  },
+  "confirmPasswordStar": "Confirm Password *",
+  "@confirmPasswordStar": {
+    "description": "Label for confirm password field"
+  },
+  "reenterPassword": "Re-enter your password",
+  "@reenterPassword": {
+    "description": "Hint text for confirm password field"
+  },
+  "passwordsDoNotMatch": "Passwords do not match",
+  "@passwordsDoNotMatch": {
+    "description": "Validation error for passwords mismatch"
+  },
+  "passwordAtLeast6": "Password must be at least 6 characters",
+  "@passwordAtLeast6": {
+    "description": "Validation error for short password"
+  },
+  "licenseRequired": "Medical license number is required",
+  "@licenseRequired": {
+    "description": "Validation error for missing license"
+  },
+  "specialtyRequired": "Please select a specialty",
+  "@specialtyRequired": {
+    "description": "Validation error for missing specialty"
+  },
+  "experienceRequired": "Years of experience is required",
+  "@experienceRequired": {
+    "description": "Validation error for missing experience"
+  },
+  "registrationSuccessful": "Registration successful!",
+  "@registrationSuccessful": {
+    "description": "Success message after registration"
+  },
+  "alreadyHaveAccount": "Already have an account? ",
+  "@alreadyHaveAccount": {
+    "description": "Text before sign-in link"
+  },
+  "signInLabel": "Sign In",
+  "@signInLabel": {
+    "description": "Text for sign-in link"
+  },
+  "createAccountBtn": "Create Account",
+  "@createAccountBtn": {
+    "description": "Button text for creating account"
+  },
+  "forgotPasswordTitle": "Forgot Password",
+  "@forgotPasswordTitle": {
+    "description": "Title for forgot password screen"
+  },
+  "selectContactReset": "Select which contact details should we use to reset your password",
+  "@selectContactReset": {
+    "description": "Subtitle for forgot password screen"
+  },
+  "emailLabel": "Email:",
+  "@emailLabel": {
+    "description": "Label for email in forgot password"
+  },
+  "enterYourEmail": "Enter your email",
+  "@enterYourEmail": {
+    "description": "Hint text for email in forgot password"
+  },
+  "sending": "Sending...",
+  "@sending": {
+    "description": "Loading text during sending"
+  },
+  "continueText": "Continue",
+  "@continueText": {
+    "description": "Button text for continue"
+  },
+  "otpTitle": "OTP",
+  "@otpTitle": {
+    "description": "Title for OTP screen"
+  },
+  "sentCodeEmail": "We have sent you a one time code to your email",
+  "@sentCodeEmail": {
+    "description": "Subtitle for OTP screen"
+  },
+  "valid6DigitOtp": "Please enter a valid 6-digit OTP",
+  "@valid6DigitOtp": {
+    "description": "Validation error for invalid OTP"
+  },
+  "emailNotFound": "Email not found. Please restart the process.",
+  "@emailNotFound": {
+    "description": "Error message when email is missing in OTP"
+  },
+  "otpSentAgain": "OTP sent again successfully",
+  "@otpSentAgain": {
+    "description": "Success message after resending OTP"
+  },
+  "didntGetCode": "Didn't get the code? ",
+  "@didntGetCode": {
+    "description": "Text before resend link"
+  },
+  "resend": "Resend",
+  "@resend": {
+    "description": "Text for resend link"
+  },
+  "resending": "Resending...",
+  "@resending": {
+    "description": "Loading text during resending"
+  },
+  "verifying": "Verifying...",
+  "@verifying": {
+    "description": "Loading text during verifying"
+  },
+  "resetPasswordTitle": "Reset Password",
+  "@resetPasswordTitle": {
+    "description": "Title for reset password screen"
+  },
+  "setNewPassword": "Set the new password for your account",
+  "@setNewPassword": {
+    "description": "Subtitle for reset password screen"
+  },
+  "newPassword": "New Password",
+  "@newPassword": {
+    "description": "Hint text for new password field"
+  },
+  "confirmPassword": "Confirm Password",
+  "@confirmPassword": {
+    "description": "Hint text for confirm password field"
+  },
+  "fillAllFields": "Please fill in all fields",
+  "@fillAllFields": {
+    "description": "Validation error for empty fields"
+  },
+  "success": "Success",
+  "@success": {
+    "description": "Title for success dialog"
+  },
+  "passwordResetSuccess": "Password has been reset successfully",
+  "@passwordResetSuccess": {
+    "description": "Success message for password reset"
+  },
+  "resetting": "Resetting...",
+  "@resetting": {
+    "description": "Loading text during resetting"
+  },
+  "appointmentManagement": "Appointment Management",
+  "@appointmentManagement": {
+    "description": "Title for appointments screen"
+  },
+  "manageConsultations": "Manage your Video and physical\nConsultations",
+  "@manageConsultations": {
+    "description": "Subtitle for appointments screen"
+  },
+  "pending": "Pending",
+  "@pending": {
+    "description": "Tab label for pending appointments"
+  },
+  "confirmed": "Confirmed",
+  "@confirmed": {
+    "description": "Tab label for confirmed appointments"
+  },
+  "completed": "Completed",
+  "@completed": {
+    "description": "Tab label for completed appointments"
+  },
+  "noAppointments": "No {status} appointments",
+  "@noAppointments": {
+    "description": "Empty state message",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "forDependent": "For: {name}",
+  "@forDependent": {
+    "description": "Label for dependent booking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "physical": "Physical",
+  "@physical": {
+    "description": "Label for physical appointment type"
+  },
+  "seeDetails": "See Details",
+  "@seeDetails": {
+    "description": "Button text to see appointment details"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Button text to cancel appointment"
+  },
+  "accept": "Accept",
+  "@accept": {
+    "description": "Button text to accept appointment"
+  },
+  "startSession": "Start Session",
+  "@startSession": {
+    "description": "Button text to start video session"
+  },
+  "appointmentDetails": "Appointment Details",
+  "@appointmentDetails": {
+    "description": "Title for appointment details sheet"
+  },
+  "patientInformation": "Patient Information",
+  "@patientInformation": {
+    "description": "Header in appointment details"
+  },
+  "bookedFor": "Booked for: {name}",
+  "@bookedFor": {
+    "description": "Label for who the appointment is for",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "symptoms": "Symptoms",
+  "@symptoms": {
+    "description": "Header for symptoms section"
+  },
+  "noSymptoms": "No symptoms provided",
+  "@noSymptoms": {
+    "description": "Fallback text for empty symptoms"
+  },
+  "medicalDocuments": "Medical Documents",
+  "@medicalDocuments": {
+    "description": "Header for medical documents section"
+  },
+  "docsUploaded": "{count} document(s) uploaded",
+  "@docsUploaded": {
+    "description": "Count of uploaded documents",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noDocsUploaded": "No medical documents uploaded",
+  "@noDocsUploaded": {
+    "description": "Fallback text for empty documents"
+  },
+  "paymentScreenshot": "Payment Screenshot",
+  "@paymentScreenshot": {
+    "description": "Header for payment screenshot section"
+  },
+  "viewPaymentScreenshot": "View Payment Screenshot",
+  "@viewPaymentScreenshot": {
+    "description": "Link text to view payment screenshot"
+  },
+  "noPaymentScreenshot": "No payment screenshot uploaded",
+  "@noPaymentScreenshot": {
+    "description": "Fallback text for empty payment screenshot"
+  },
+  "documentUrl": "Document URL",
+  "@documentUrl": {
+    "description": "Title for document URL dialog"
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Button text to close dialog"
+  },
+  "errorOpeningDoc": "Error opening document: {error}",
+  "@errorOpeningDoc": {
+    "description": "Error message for document opening failure",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelAppointment": "Cancel Appointment",
+  "@cancelAppointment": {
+    "description": "Title for cancel confirmation dialog"
+  },
+  "confirmCancel": "Are you sure you want to cancel this appointment?",
+  "@confirmCancel": {
+    "description": "Content for cancel confirmation dialog"
+  },
+  "no": "No",
+  "@no": {
+    "description": "Button text for no"
+  },
+  "yes": "Yes",
+  "@yes": {
+    "description": "Button text for yes"
+  },
+  "appointmentAccepted": "Appointment accepted successfully",
+  "@appointmentAccepted": {
+    "description": "Success snackbar after accepting"
+  },
+  "failedAccept": "Failed to accept appointment",
+  "@failedAccept": {
+    "description": "Error snackbar after acceptance failure"
+  },
+  "appointmentCancelled": "Appointment cancelled",
+  "@appointmentCancelled": {
+    "description": "Success snackbar after cancellation"
+  },
+  "cancelled": "Cancelled",
+  "@cancelled": {
+    "description": "Status label for cancelled appointment"
+  },
+  "failedCancel": "Failed to cancel appointment",
+  "@failedCancel": {
+    "description": "Error snackbar after cancellation failure"
+  },
+  "loadingImage": "Loading image...",
+  "@loadingImage": {
+    "description": "Loading text for image viewer"
+  },
+  "failedLoadImage": "Failed to load image",
+  "@failedLoadImage": {
+    "description": "Error text for image viewer"
+  },
+  "medicalDocument": "Medical Document",
+  "@medicalDocument": {
+    "description": "Title for image viewer"
+  },
+  "resetZoom": "Reset Zoom",
+  "@resetZoom": {
+    "description": "Tooltip for reset zoom button"
+  },
+  "zoomInstructions": "Pinch to zoom • Drag to pan",
+  "@zoomInstructions": {
+    "description": "Instructions for image viewer"
+  },
+  "myAppointment": "My Appointment",
+  "@myAppointment": {
+    "description": "Title for patient appointments screen"
+  },
+  "upcoming": "Upcoming",
+  "@upcoming": {
+    "description": "Tab label for upcoming appointments"
+  },
+  "upcomingCount": "Up Coming ({count})",
+  "@upcomingCount": {
+    "description": "Tab label with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reschedule": "Reschedule",
+  "@reschedule": {
+    "description": "Button text to reschedule"
+  },
+  "writeReview": "Write Review",
+  "@writeReview": {
+    "description": "Button text to write review"
+  },
+  "updateReview": "Update Your Review",
+  "@updateReview": {
+    "description": "Dialog title to update review"
+  },
+  "rateExperience": "Rate Your Experience",
+  "@rateExperience": {
+    "description": "Dialog title to rate experience"
+  },
+  "withDoctor": "with {name}",
+  "@withDoctor": {
+    "description": "Subtitle for review dialog",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notif_appointment_booked_title": "New Appointment Request",
+  "@notif_appointment_booked_title": {
+    "description": "Notification title when appointment is booked"
+  },
+  "notif_appointment_booked_body": "You have a new appointment request from a patient.",
+  "@notif_appointment_booked_body": {
+    "description": "Notification body when appointment is booked"
+  },
+  "notif_appointment_confirmed_title": "Appointment Confirmed",
+  "@notif_appointment_confirmed_title": {
+    "description": "Notification title when appointment is confirmed"
+  },
+  "notif_appointment_confirmed_body": "Your appointment with the doctor has been confirmed.",
+  "@notif_appointment_confirmed_body": {
+    "description": "Notification body when appointment is confirmed"
+  },
+  "notif_appointment_cancelled_title": "Appointment Cancelled",
+  "@notif_appointment_cancelled_title": {
+    "description": "Notification title when appointment is cancelled"
+  },
+  "notif_appointment_cancelled_body": "An appointment has been cancelled.",
+  "@notif_appointment_cancelled_body": {
+    "description": "Notification body when appointment is cancelled"
+  },
+  "notif_appointment_completed_title": "Appointment Completed",
+  "@notif_appointment_completed_title": {
+    "description": "Notification title when appointment is completed"
+  },
+  "notif_appointment_completed_body": "Your appointment has been marked as completed.",
+  "@notif_appointment_completed_body": {
+    "description": "Notification body when appointment is completed"
+  },
+  "notif_post_liked_title": "New Like",
+  "@notif_post_liked_title": {
+    "description": "Notification title when post is liked"
+  },
+  "notif_post_liked_body": "Someone liked your post.",
+  "@notif_post_liked_body": {
+    "description": "Notification body when post is liked"
+  },
+  "notif_post_commented_title": "New Comment",
+  "@notif_post_commented_title": {
+    "description": "Notification title when post is commented"
+  },
+  "notif_post_commented_body": "Someone commented on your post.",
+  "@notif_post_commented_body": {
+    "description": "Notification body when post is commented"
+  },
+  "notif_reel_liked_title": "New Reel Like",
+  "@notif_reel_liked_title": {
+    "description": "Notification title when reel is liked"
+  },
+  "notif_reel_liked_body": "Someone liked your reel.",
+  "@notif_reel_liked_body": {
+    "description": "Notification body when reel is liked"
+  },
+  "notif_reel_commented_title": "New Reel Comment",
+  "@notif_reel_commented_title": {
+    "description": "Notification title when reel is commented"
+  },
+  "notif_reel_commented_body": "Someone commented on your reel.",
+  "@notif_reel_commented_body": {
+    "description": "Notification body when reel is commented"
+  },
+  "reviewSubmitted": "Review submitted successfully! ⭐",
+  "@reviewSubmitted": {
+    "description": "Success snackbar after review submission"
+  },
+  "failedSubmitReview": "Failed to submit review",
+  "@failedSubmitReview": {
+    "description": "Error snackbar after review failure"
+  },
+  "submit": "Submit",
+  "@submit": {
+    "description": "Button text to submit review"
+  },
+  "video": "Video",
+  "@video": {
+    "description": "Appointment type video"
+  },
+  "doctor": "Doctor",
+  "@doctor": {
+    "description": "Fallback text for doctor name"
+  },
+  "videoAvailable": "Video Consultation Available",
+  "@videoAvailable": {
+    "description": "Badge for video call availability"
+  },
+  "inPersonOnly": "In-Person Only",
+  "@inPersonOnly": {
+    "description": "Badge for in-person only appointments"
+  },
+  "reviewsCount": "({count} reviews)",
+  "@reviewsCount": {
+    "description": "Reviews count display",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bio": "Bio",
+  "@bio": {
+    "description": "Label for doctor biography"
+  },
+  "specialty": "Specialty",
+  "@specialty": {
+    "description": "Label for doctor specialty"
+  },
+  "degree": "Degree",
+  "@degree": {
+    "description": "Label for doctor degree"
+  },
+  "fees": "Fees",
+  "@fees": {
+    "description": "Label for doctor consultation fees"
+  },
+  "dzd": "DZD",
+  "@dzd": {
+    "description": "Algerian Dinar currency code"
+  },
+  "visitingHours": "Visiting Hours",
+  "@visitingHours": {
+    "description": "Label for doctor visiting hours"
+  },
+  "notSet": "Not set",
+  "@notSet": {
+    "description": "Fallback text when hours are not set"
+  },
+  "messageDoctor": "Message Doctor",
+  "@messageDoctor": {
+    "description": "Button text to message a doctor"
+  },
+  "bookNow": "Book Now",
+  "@bookNow": {
+    "description": "Button text to book an appointment"
+  },
+  "invalidDoctor": "Invalid Doctor",
+  "@invalidDoctor": {
+    "description": "Error message for invalid doctor selection"
+  },
+  "doctorIdNotFound": "Doctor ID not found",
+  "@doctorIdNotFound": {
+    "description": "Error message when doctor ID is missing"
+  },
+  "failedCreateChat": "Failed to create chat",
+  "@failedCreateChat": {
+    "description": "Error message when chat creation fails"
+  },
+  "failedOpenChat": "Failed to open chat",
+  "@failedOpenChat": {
+    "description": "Error message when opening a chat fails"
+  },
+  "physicalVisit": "Physical Visit",
+  "@physicalVisit": {
+    "description": "Appointment type physical visit"
+  },
+  "videoCall": "Video Call",
+  "@videoCall": {
+    "description": "Appointment type video call"
+  },
+  "audioVideoCalls": "Audio/Video Calls",
+  "@audioVideoCalls": {
+    "description": "Audio/Video calls toggle title"
+  },
+  "rescheduleAppointment": "Reschedule Appointment",
+  "@rescheduleAppointment": {
+    "description": "Title for rescheduling screen"
+  },
+  "bookAppointment": "Book Appointment",
+  "@bookAppointment": {
+    "description": "Title for booking screen"
+  },
+  "rescheduleBanner": "You are rescheduling your appointment. Old appointment will be cancelled.",
+  "@rescheduleBanner": {
+    "description": "Banner message during reschedule"
+  },
+  "videoUploadWarning": "Video appointments- patient must\nupload BaridiMob payment screenshot",
+  "@videoUploadWarning": {
+    "description": "Warning message for video payments"
+  },
+  "appointmentTypeLabel": "Appointment Type",
+  "@appointmentTypeLabel": {
+    "description": "Heading for appointment type selection"
+  },
+  "payAtClinic": "Pay at Clinic",
+  "@payAtClinic": {
+    "description": "Subtitle for physical visit"
+  },
+  "onlinePayment": "Online Payment",
+  "@onlinePayment": {
+    "description": "Subtitle for video call"
+  },
+  "bookAppointmentFor": "Book Appointment For",
+  "@bookAppointmentFor": {
+    "description": "Heading for patient selection"
+  },
+  "myself": "Myself",
+  "@myself": {
+    "description": "Option to book for self"
+  },
+  "orSelectDependent": "Or select a dependent:",
+  "@orSelectDependent": {
+    "description": "Section label for dependents"
+  },
+  "addNewDependent": "Add New Dependent",
+  "@addNewDependent": {
+    "description": "Button to add a dependent"
+  },
+  "selectDate": "Select Date",
+  "@selectDate": {
+    "description": "Label for date selection"
+  },
+  "datePlaceholder": "dd/mm/yyyy",
+  "@datePlaceholder": {
+    "description": "Placeholder for date field"
+  },
+  "availableTime": "Available Time",
+  "@availableTime": {
+    "description": "Label for time slot selection"
+  },
+  "noTimeSlots": "No available time slots for this date",
+  "@noTimeSlots": {
+    "description": "Message when no slots are available"
+  },
+  "timeTo": "To",
+  "@timeTo": {
+    "description": "Connector between start and end time"
+  },
+  "booked": "Booked",
+  "@booked": {
+    "description": "Status for an unavailable slot"
+  },
+  "describeSymptoms": "Describe your Symptoms",
+  "@describeSymptoms": {
+    "description": "Label for symptoms input"
+  },
+  "symptomsHint": "Please describe your symptoms in detail....",
+  "@symptomsHint": {
+    "description": "Hint for symptoms input"
+  },
+  "uploadMedicalDocs": "Upload Medical Documents",
+  "@uploadMedicalDocs": {
+    "description": "Label for document upload"
+  },
+  "tapToUpload": "Tap to Upload image or PDF",
+  "@tapToUpload": {
+    "description": "Instruction for document upload"
+  },
+  "uploadPaymentScreenshot": "Upload Payment Screenshot",
+  "@uploadPaymentScreenshot": {
+    "description": "Label for payment screenshot upload"
+  },
+  "tapToUploadPayment": "Tap to Upload Your Payment Screenshot",
+  "@tapToUploadPayment": {
+    "description": "Instruction for payment upload"
+  },
+  "confirmReschedule": "Confirm Reschedule",
+  "@confirmReschedule": {
+    "description": "Button text to confirm rescheduling"
+  },
+  "submitAppointmentRequest": "Submit Appointment Request",
+  "@submitAppointmentRequest": {
+    "description": "Button text to submit booking"
+  },
+  "invalidDoctorBooking": "Invalid Doctor – Cannot book appointment",
+  "@invalidDoctorBooking": {
+    "description": "Error during booking if doctor is invalid"
+  },
+  "selectDateTime": "Please select date and time",
+  "@selectDateTime": {
+    "description": "Validation error for missing date/time"
+  },
+  "rescheduleFailed": "Reschedule failed: {error}",
+  "@rescheduleFailed": {
+    "description": "Error message when rescheduling fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentRequired": "Payment screenshot required for Video Call",
+  "@paymentRequired": {
+    "description": "Validation error for missing payment proof"
+  },
+  "bookingFailed": "Booking failed",
+  "@bookingFailed": {
+    "description": "Generic booking failure message"
+  },
+  "completeSession": "Complete Session",
+  "@completeSession": {
+    "description": "Title for session completion screen"
+  },
+  "sessionCompleted": "Session completed successfully! ✅",
+  "@sessionCompleted": {
+    "description": "Success message after completing session"
+  },
+  "failedCompleteSession": "Failed to complete session",
+  "@failedCompleteSession": {
+    "description": "Error message when session completion fails"
+  },
+  "sessionPaymentDetails": "Session Payment Details",
+  "@sessionPaymentDetails": {
+    "description": "Heading for payment input section"
+  },
+  "enterSessionDetails": "Enter the details to complete this session",
+  "@enterSessionDetails": {
+    "description": "Subtitle instructions for completion"
+  },
+  "patientFullName": "Patient Full Name",
+  "@patientFullName": {
+    "description": "Label for patient name input"
+  },
+  "enterPatientName": "Enter patient's full name",
+  "@enterPatientName": {
+    "description": "Hint for patient name input"
+  },
+  "patientNameRequired": "Please enter patient name",
+  "@patientNameRequired": {
+    "description": "Validation error for missing patient name"
+  },
+  "payableAmount": "Payable Amount (DZD)",
+  "@payableAmount": {
+    "description": "Label for amount input with currency"
+  },
+  "enterAmountReceived": "Enter amount received",
+  "@enterAmountReceived": {
+    "description": "Hint for amount input"
+  },
+  "amountRequired": "Please enter amount",
+  "@amountRequired": {
+    "description": "Validation error for missing amount"
+  },
+  "validAmountRequired": "Please enter a valid amount",
+  "@validAmountRequired": {
+    "description": "Validation error for invalid amount format"
+  },
+  "notificationTitle": "Notification",
+  "@notificationTitle": {
+    "description": "Title for notification screen"
+  },
+  "notificationsTitle": "Notifications",
+  "@notificationsTitle": {
+    "description": "Title for notifications screen"
+  },
+  "markAllAsRead": "Mark all as read",
+  "@markAllAsRead": {
+    "description": "Tooltip for marking all notifications as read"
+  },
+  "newNotifications": "New",
+  "@newNotifications": {
+    "description": "Section title for new notifications"
+  },
+  "earlierNotifications": "Earlier",
+  "@earlierNotifications": {
+    "description": "Section title for older notifications"
+  },
+  "noNotifications": "No notifications",
+  "@noNotifications": {
+    "description": "Empty state message for notifications"
+  },
+  "noNotificationsYet": "No notifications yet",
+  "@noNotificationsYet": {
+    "description": "Empty state title for doctor notifications"
+  },
+  "doctorNotificationEmptySubtitle": "We'll notify you when a patient books or updates an appointment.",
+  "@doctorNotificationEmptySubtitle": {
+    "description": "Empty state subtitle for doctor notifications"
+  },
+  "upcomingPatient": "Upcoming Patient",
+  "@upcomingPatient": {
+    "description": "Section title for upcoming patients in doctor notifications"
+  },
+  "addTextOrMedia": "Please add some text or media to post",
+  "reelPrivacy": "Reel Privacy",
+  "reelVisibleDoctorsOnly": "🔒 This reel will be visible to doctors only.",
+  "reelVisibleEveryone": "🌍 This reel will be visible to everyone (doctors and patients).",
+  "currentPrivacy": "Current privacy: {privacy}",
+  "privateDoctorsOnly": "Private (Doctors Only)",
+  "publicEveryone": "Public (Everyone)",
+  "uploadReel": "Upload Reel",
+  "privateReelUploaded": "✓ Private reel uploaded! (Doctors only)",
+  "publicReelUploaded": "✓ Public reel uploaded! (Everyone can see)",
+  "failedUploadReel": "Failed to upload reel",
+  "postSharedSuccessfully": "✓ Post shared successfully!",
+  "failedCreatePost": "Failed to create post",
+  "whatsOnYourMind": "What's on your mind?.......",
+  "videoSelected": "Video Selected",
+  "failedLikePost": "Failed to like post",
+  "deletePost": "Delete Post",
+  "reportPost": "Report Post",
+  "reportComingSoon": "Report - Coming soon!",
+  "confirmDeletePost": "Are you sure you want to delete this post?",
+  "delete": "Delete",
+  "postDeletedSuccessfully": "✓ Post deleted successfully",
+  "failedDeletePost": "Failed to delete post",
+  "sharePost": "Share Post",
+  "shareExternally": "Share Externally",
+  "sendMessage": "Send Message",
+  "shareMessageComingSoon": "Share to message - Coming soon!",
+  "authorPosted": "{name} posted:",
+  "imagesCount": "{count} image(s)",
+  "videosCount": "{count} video(s)",
+  "noCommentsYet": "No comments yet",
+  "writeComment": "Write a comment...",
+  "likeLabel": "Like",
+  "commentLabel": "Comment",
+  "shareLabel": "Share",
+  "likesCount": "{count} {count, plural, =1{like} other{likes}}",
+  "commentsCount": "{count} {count, plural, =1{comment} other{comments}}",
+  "sharesCount": "{count} {count, plural, =1{share} other{shares}}",
+  "post": "Post",
+  "commentsLabel": "Comments",
+  "reelsLabel": "Reels",
+  "failedLoadReels": "Failed to load reels",
+  "retryLabel": "Retry",
+  "noReelsAvailable": "No reels available",
+  "unknownDoctor": "Unknown Doctor",
+  "unknown": "Unknown",
+  "doctorsOnlyLabel": "Doctors Only",
+  "failedLikeReel": "Failed to like reel",
+  "authorSharedReel": "{name} shared a reel",
+  "playbackSpeed": "{speed}x Speed",
+  "justNow": "Just now",
+  "messagesLabel": "Messages",
+  "allLabel": "All",
+  "doctorsLabel": "Doctors",
+  "patientsLabel": "Patients",
+  "noMessagesYet": "No messages yet",
+  "noConversationsYet": "No conversations yet",
+  "deleteChats": "Delete Chats",
+  "deleteMessages": "Delete Messages",
+  "deleteConversationsConfirm": "Are you sure you want to delete {count} conversations? This will remove all messages.",
+  "deleteMessagesConfirm": "Are you sure you want to delete {count} messages?",
+  "deleteLabel": "Delete",
+  "conversationsDeleted": "Conversations deleted",
+  "messagesDeleted": "Messages deleted",
+  "failedToDelete": "Failed to delete: {error}",
+  "startConversationWith": "Start a conversation with {name}",
+  "typeAMessage": "Type a message...",
+  "failedToSendMessage": "Failed to send message",
+  "cannotStartCallNoId": "Cannot start call - user ID not found",
+  "failedToStartCall": "Failed to start call: {error}",
+  "videoCall": "Video Call",
+  "voiceCall": "Voice Call",
+  "doctorUnavailableForCalls": "Doctor is not available for calls at this time",
+  "doctorUnavailableForCallsDescription": "The doctor is not available for {type} calls. You can send a message or try again later.",
+  "imageLabel": "[Image]",
+  "fileLabel": "[File]",
+  "messageLabel": "[Message]",
+  "yesterday": "Yesterday",
+  "todayLabel": "Today",
+  "daysAgo": "{count}d ago",
+  "hoursAgo": "{count}h ago",
+  "minutesAgo": "{count}m ago",
+  "meLabel": "Me",
+  "patientLabel": "Patient",
+  "doctorLabel": "Doctor",
+  "startConversation": "Start conversation",
+  "helpSupportComingSoon": "Help & Support - Coming Soon",
+  "myDependents": "My Dependents",
+  "noDependentsAdded": "No dependents added yet",
+  "addDependent": "Add Dependent",
+  "editDependent": "Edit Dependent",
+  "inactive": "Inactive",
+  "active": "Active",
+  "ageLabel": "Age",
+  "genderLabel": "Gender",
+  "contactLabel": "Contact",
+  "deleteDependentTitle": "Delete Dependent?",
+  "deleteDependentConfirm": "Are you sure you want to delete \"{name}\"?",
+  "deleteDependentWarning": "If they have active appointments, you must cancel those first.",
+  "cannotDeleteTitle": "Cannot Delete",
+  "howToFix": "How to fix:",
+  "deleteFixInstructions": "1. Go to My Appointments\n2. Cancel any pending/accepted appointments for this dependent\n3. Then try deleting again",
+  "goToAppointments": "Go to Appointments",
+  "dependentDeletedSuccess": "{name} deleted successfully",
+  "dependentAddedSuccess": "Dependent added successfully!",
+  "dependentUpdatedSuccess": "Dependent updated successfully!",
+  "failedToAddDependent": "Failed to add dependent",
+  "failedToUpdateDependent": "Failed to update dependent",
+  "basicInformation": "Basic Information",
+  "nameIsRequired": "Name is required",
+  "selectRelationship": "Please select relationship",
+  "selectDob": "Please select date of birth",
+  "relationshipLabel": "Relationship",
+  "relationshipHint": "Relationship (e.g. Child, Spouse)",
+  "contactDetails": "Contact Details",
+  "guardianContactLabel": "Parent/Guardian Contact (Primary)",
+  "userInfoWillBeUsed": "Your user info will be used",
+  "dependentContactHint": "Dependent's Contact (if applicable)",
+  "additionalInformation": "Additional Information",
+  "medicalNotesHint": "Medical Notes / Allergies (Optional)",
+  "saveDependent": "Save Dependent",
+  "updateDependent": "Update Dependent",
+  "relChild": "Child",
+  "relSpouse": "Spouse",
+  "relFather": "Father",
+  "relMother": "Mother",
+  "relBrother": "Brother",
+  "relSister": "Sister",
+  "relGrandparent": "Grandparent",
+  "relOther": "Other",
+  "relSon": "Son",
+  "relDaughter": "Daughter",
+  "male": "Male",
+  "female": "Female",
+  "edit": "Edit",
+  "dateOfBirth": "Date of Birth",
+  "editYourProfile": "Edit Your Profile",
+  "profilePicture": "Profile Picture",
+  "tapToChangePicture": "Tap to Change your Picture",
+  "phoneNumber": "Phone Number",
+  "address": "Address",
+  "updateProfile": "Update Profile",
+  "profileUpdatedSuccess": "Profile updated successfully",
+  "updateFailed": "Update failed",
+  "nameEmptyError": "Name cannot be empty",
+  "noChangesToSave": "No changes to save",
+  "errorMsg": "Error: {error}",
+  "addBio": "Add Bio",
+  "bioHint": "Tell us about yourself...",
+  "specialty": "Specialty",
+  "selectSpecialty": "Select Specialty",
+  "degree": "Degree",
+  "degreeHint": "MBBS, MD, etc.",
+  "emailLockedNote": "Email cannot be changed",
+  "clinicLocation": "Clinic Location",
+  "clinicLocationHint": "Set your clinic location",
+  "contactNumberHint": "Contact number",
+  "specCardiologist": "Cardiologist",
+  "specDermatologist": "Dermatologist",
+  "specNeurologist": "Neurologist",
+  "specOrthopedic": "Orthopedic",
+  "specPediatrician": "Pediatrician",
+  "specPsychiatrist": "Psychiatrist",
+  "specGeneralPhysician": "General Physician",
+  "specENT": "ENT Specialist",
+  "specGynecologist": "Gynecologist",
+  "specOphthalmologist": "Ophthalmologist",
+  "specDentist": "Dentist",
+  "specUrologist": "Urologist",
+  "statusLabel": "Status",
+  "changePassword": "Change Password",
+  "passwordLengthRequirement": "Password must be at least 6 characters long",
+  "currentPassword": "Current Password",
+  "enterCurrentPassword": "Enter current password",
+  "newPassword": "New Password",
+  "enterNewPassword": "Enter new password",
+  "confirmNewPassword": "Confirm New Password",
+  "reEnterNewPassword": "Re-enter new password",
+  "passwordsDoNotMatchError": "New password and confirm password do not match",
+  "passwordChangedSuccess": "Password changed successfully",
+  "changePasswordFailed": "Failed to change password",
+  "earningOverview": "Earning Overview",
+  "trackIncomeSubtitle": "Track your income across all appointment types.",
+  "daily": "Daily",
+  "weekly": "Weekly",
+  "monthly": "Monthly",
+  "totalEarning": "Total Earning",
+  "appointmentsCount": "{count} appointments",
+  "sessionsCount": "{count} sessions",
+  "weeklyPerformance": "Weekly Performance",
+  "failedFetchEarnings": "Failed to fetch earnings",
+  "video": "Video",
+  "onlineAppointment": "Online Appointment",
+  "consultationFees": "Consultation Fees (DZD)",
+  "weeklySchedule": "Weekly Schedule",
+  "addNewSlot": "Add New Slot",
+  "saveChanges": "Save Changes",
+  "endTimeError": "End time must be after start time",
+  "enterConsultationFees": "Please enter consultation fees",
+  "scheduleSavedSuccess": "Schedule saved successfully!",
+  "to": "To",
+  "selectStartTime": "Select Start Time",
+  "selectEndTime": "Select End Time",
+  "selectTimeFromPicker": "Please select time from the picker below",
+  "faqTitle": "Frequently Asked Questions (FAQ)",
+  "faq1Question": "1. How do I create an account?",
+  "faq1Answer": "You can sign up as a patient or doctor by choosing your role and completing the registration steps in the app.",
+  "faq2Question": "2. I forgot my password. What should I do?",
+  "faq2Answer": "Go to the login screen and tap on “Forgot Password”. Follow the instructions to reset your password securely.",
+  "faq3Question": "3. How can I book an appointment with a doctor?",
+  "faq3Answer": "Search for a doctor or specialty, select an available time slot, and confirm your appointment.",
+  "faq4Question": "4. Can I cancel or reschedule my appointment?",
+  "faq4Answer": "Yes, you can cancel or reschedule appointments from the “My Appointments” section, depending on the appointment status.",
+  "faq5Question": "5. How do online audio/video consultations work?",
+  "faq5Answer": "Once your appointment is confirmed, you can start an audio or video call directly from the chat at the scheduled time (if enabled by the doctor).",
+  "faq6Question": "6. Why can’t I start a call with the doctor?",
+  "faq6Answer": "The doctor may have disabled audio/video calls temporarily. Please try again later or contact support.",
+  "faq7Question": "7. How do I change the app language?",
+  "faq7Answer": "You can change the language from the app settings at any time.",
+  "faq8Question": "8. How can doctors manage their profile information?",
+  "faq8Answer": "Doctors can edit their personal and professional information from the profile settings.",
+  "faq9Question": "9. How does the referral system work?",
+  "faq9Answer": "If referral codes are enabled, doctors can register using a valid referral code provided by the admin.",
+  "stillNeedHelp": "Still need help?",
+  "emailUs": "Email Us",
+  "callUs": "Call Us",
+  "emailSubject": "Help & Support Request",
+  "bookingSuccess": "Appointment booked successfully!",
+  "@bookingSuccess": {
+    "description": "Success message for booking"
+  }
+}
+

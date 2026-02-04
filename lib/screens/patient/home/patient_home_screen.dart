@@ -1,0 +1,1260 @@
+import 'dart:convert';
+import 'package:aroggyapath/l10n/app_localizations.dart';
+
+import 'package:aroggyapath/screens/patient/home/full_map_screen.dart';
+import 'package:aroggyapath/screens/patient/home/upcoming_appointment_card.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart' as legacy_provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aroggyapath/models/doctor_model.dart';
+import 'package:aroggyapath/providers/doctor_provider.dart';
+import 'package:aroggyapath/providers/appointment_provider.dart';
+import 'package:aroggyapath/providers/user_provider.dart';
+import 'package:aroggyapath/providers/notification_provider.dart';
+import 'package:aroggyapath/screens/patient/home/see_all_doctors_screen.dart';
+import 'package:aroggyapath/screens/patient/doctor/doctor_detail_screen.dart';
+import 'package:aroggyapath/screens/patient/doctor/book_appointment_screen.dart';
+import 'package:aroggyapath/screens/patient/notification/patient_notification_screen.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_map/flutter_map.dart' as fm;
+import 'package:aroggyapath/widgets/osm_map_widget.dart';
+import 'package:aroggyapath/services/location_service.dart';
+import 'package:aroggyapath/services/directions_service.dart'; // ✅ Add this line
+import 'package:aroggyapath/utils/marker_factory.dart';
+import 'package:aroggyapath/screens/patient/profile/patient_profile_screen.dart';
+import 'package:aroggyapath/widgets/custom_image.dart';
+import 'dart:async';
+
+class PatientHomeScreen extends ConsumerStatefulWidget {
+  const PatientHomeScreen({super.key});
+
+  @override
+  ConsumerState<PatientHomeScreen> createState() => _PatientHomeScreenState();
+}
+
+class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
+  final LocationService _locationService = LocationService();
+  final MarkerFactory _markerFactory = MarkerFactory();
+  final DirectionsService _directionsService = DirectionsService(); // ✅ Add
+
+  final TextEditingController _searchController = TextEditingController();
+  final fm.MapController _mapController = fm.MapController();
+
+  // Default location (Dhaka, Bangladesh)
+  LatLng _currentPosition = const LatLng(23.8103, 90.4125);
+  bool _isLoadingLocation = true;
+  bool _locationPermissionGranted = false;
+  List<fm.Marker> _markers = [];
+  List<fm.Polyline> _polylines = [];
+  List<fm.Polyline> _directionPolylines = [];
+  String? _selectedDoctorId;
+  bool _isMapReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeScreen();
+    });
+  }
+
+  Future<void> _initializeScreen() async {
+    try {
+      // 1. Fetch appointments first (doesn't depend on location)
+      await legacy_provider.Provider.of<AppointmentProvider>(
+        context,
+        listen: false,
+      ).fetchAppointments();
+
+      // 2. Get Location immediately to optimize doctor fetch
+      await _getCurrentLocation();
+
+      // 3. Fetch doctors using the location we just got
+      if (mounted) {
+        double? lat = _currentPosition.latitude;
+        double? lng = _currentPosition.longitude;
+
+        // If location is default (0,0), don't pass it to avoid issues
+        if (lat == 0 && lng == 0) {
+          lat = null;
+          lng = null;
+        }
+
+        await legacy_provider.Provider.of<DoctorProvider>(
+          context,
+          listen: false,
+        ).fetchNearbyDoctors(lat: lat, lng: lng);
+      }
+    } catch (e) {
+      debugPrint('Error initializing screen: $e');
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('Location services are disabled.');
+        if (mounted) {
+          setState(() {
+            _isLoadingLocation = false;
+            _locationPermissionGranted = false;
+          });
+          _showLocationServiceDialog();
+        }
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          debugPrint('Location permissions are denied');
+          if (mounted) {
+            setState(() {
+              _isLoadingLocation = false;
+              _locationPermissionGranted = false;
+            });
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint('Location permissions are permanently denied');
+        if (mounted) {
+          setState(() {
+            _isLoadingLocation = false;
+            _locationPermissionGranted = false;
+          });
+          _showPermissionDeniedDialog();
+        }
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _locationPermissionGranted = true;
+        });
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      debugPrint(
+        'Location obtained: ${position.latitude}, ${position.longitude}',
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentPosition = LatLng(position.latitude, position.longitude);
+          _isLoadingLocation = false;
+        });
+
+        if (_isMapReady) {
+          _mapController.move(_currentPosition, 14);
+        }
+
+        _printCurrentLocation();
+        _addDoctorMarkers();
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+          _locationPermissionGranted = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.loading} : ${e.toString()}'),
+            action: SnackBarAction(
+              label: l10n.retry,
+              onPressed: _getCurrentLocation,
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  // Calculate distance wrapper
+  double _calculateDistanceInKm(LatLng from, LatLng to) {
+    return _locationService.calculateDistanceInKm(from, to);
+  }
+
+  void _showLocationServiceDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(l10n.locationServicesDisabledTitle),
+          content: Text(l10n.locationServicesDisabledMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await Geolocator.openLocationSettings();
+              },
+              child: Text(l10n.openSettings),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPermissionDeniedDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(l10n.locationPermissionRequiredTitle),
+          content: Text(l10n.locationPermissionRequiredMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await Geolocator.openAppSettings();
+              },
+              child: Text(l10n.openSettings),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 🔥 Console এ location print করবে
+  Future<void> _printCurrentLocation() async {
+    if (!_locationPermissionGranted) {
+      debugPrint('⚠️ Location permission নাই');
+      return;
+    }
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+
+      final locationData = {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      debugPrint('Latitude : ${position.latitude}');
+      debugPrint('Longitude: ${position.longitude}');
+      debugPrint('Timestamp: ${DateTime.now().toIso8601String()}');
+      debugPrint(json.encode(locationData));
+    } catch (e) {
+      debugPrint('❌ Location নিতে error: $e');
+    }
+  }
+
+  // Get color based on distance (Green for near, Red for far)
+  Color _getRouteColor(double distanceKm) {
+    if (distanceKm <= 5) {
+      return Colors.green; // Very close
+    } else if (distanceKm <= 10) {
+      return Colors.lightGreen; // Close
+    } else if (distanceKm <= 15) {
+      return Colors.orange; // Medium distance
+    } else {
+      return Colors.red; // Far
+    }
+  }
+
+  Future<void> _addDoctorMarkers() async {
+    try {
+      final doctors = context.read<DoctorProvider>().nearbyDoctors;
+      List<fm.Marker> markers = [];
+      List<fm.Polyline> polylines = [];
+
+      // Add user location marker
+      markers.add(_markerFactory.createUserMarker(_currentPosition));
+      debugPrint('📍 DOCTOR MARKERS - সম্পূর্ণ তথ্য');
+      debugPrint(
+        '📍 Patient Location: ${_currentPosition.latitude}, ${_currentPosition.longitude}',
+      );
+      debugPrint('📍 Total Doctors: ${doctors.length}');
+
+      for (int i = 0; i < doctors.length; i++) {
+        final doctor = doctors[i];
+
+        // ✅ Backend থেকে আসা location check করুন
+        if (doctor.latitude != null && doctor.longitude != null) {
+          final doctorLocation = LatLng(doctor.latitude!, doctor.longitude!);
+
+          // Calculate distance
+          double distanceKm = _locationService.calculateDistanceInKm(
+            _currentPosition,
+            doctorLocation,
+          );
+
+          // ✅ Marker add করুন (Async with custom image)
+          final marker = await _markerFactory.createCustomDoctorMarker(
+            doctor: doctor,
+            distanceKm: distanceKm,
+            onTap: () {
+              _showDoctorRoute(doctor.id, doctorLocation, distanceKm);
+            },
+          );
+          markers.add(marker);
+
+          // ✅ Polyline route add করুন
+          Color routeColor = _getRouteColor(distanceKm);
+
+          polylines.add(
+            fm.Polyline(
+              points: [_currentPosition, doctorLocation],
+              color: routeColor,
+              strokeWidth: 4,
+            ),
+          );
+        }
+      }
+      debugPrint('📍 SUMMARY:');
+      debugPrint('   - Total Markers: ${markers.length}');
+      debugPrint('   - Total Routes: ${polylines.length}');
+
+      if (mounted) {
+        setState(() {
+          _markers = markers;
+          _polylines = polylines;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Error adding doctor markers: $e');
+    }
+  }
+
+  void _showDoctorRoute(
+    String doctorId,
+    LatLng doctorLocation,
+    double distance,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    // Set selected doctor
+    if (mounted) {
+      setState(() {
+        _selectedDoctorId = doctorId;
+      });
+    }
+
+    debugPrint('🗺️ Fetching street-level directions...');
+
+    // Show loading snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            SizedBox(width: 12),
+            Text(l10n.loadingRoute),
+          ],
+        ),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.blue,
+      ),
+    );
+
+    // Fetch directions from Google Maps Directions API
+    final directions = await _directionsService.getDirections(
+      origin: _currentPosition,
+      destination: doctorLocation,
+    );
+
+    if (directions != null && mounted) {
+      final polylinePoints = directions['polylinePoints'] as List<LatLng>;
+
+      debugPrint('✅ Street route loaded with ${polylinePoints.length} points');
+      debugPrint('📏 Distance via road: ${directions['distance']}');
+      debugPrint('⏱️ Estimated time: ${directions['duration']}');
+
+      setState(() {
+        // Clear old direction polylines
+        _directionPolylines.clear();
+
+        // Add new street-level direction polyline
+        _directionPolylines.add(
+          fm.Polyline(
+            points: polylinePoints,
+            color: Colors.blue,
+            strokeWidth: 6,
+          ),
+        );
+      });
+
+      // Zoom to show both user and doctor location
+      _mapController.fitCamera(
+        fm.CameraFit.bounds(
+          bounds: fm.LatLngBounds(_currentPosition, doctorLocation),
+          padding: const EdgeInsets.all(100),
+        ),
+      );
+
+      // Show distance and duration info
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.directions_car, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '${directions['distance']} • ${directions['duration']}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 4),
+          backgroundColor: Colors.blue,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      // Navigate to doctor details after showing route
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        final doctor = context.read<DoctorProvider>().nearbyDoctors.firstWhere(
+          (d) => d.id == doctorId,
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DoctorDetailsScreen(doctor: doctor),
+          ),
+        );
+      }
+    } else {
+      debugPrint('⚠️ Could not fetch street directions, using straight line');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.directionsApiDisabled,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 4),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        // Still zoom to location
+        _mapController.fitCamera(
+          fm.CameraFit.bounds(
+            bounds: fm.LatLngBounds(_currentPosition, doctorLocation),
+            padding: const EdgeInsets.all(100),
+          ),
+        );
+
+        // Navigate to doctor details
+        final doctor = context.read<DoctorProvider>().nearbyDoctors.firstWhere(
+          (d) => d.id == doctorId,
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DoctorDetailsScreen(doctor: doctor),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await Future.wait([
+      legacy_provider.Provider.of<DoctorProvider>(
+        context,
+        listen: false,
+      ).fetchNearbyDoctors(),
+      legacy_provider.Provider.of<AppointmentProvider>(
+        context,
+        listen: false,
+      ).fetchAppointments(),
+    ]);
+    await _addDoctorMarkers();
+  }
+
+  String _calculateDistance(Doctor doctor) {
+    final l10n = AppLocalizations.of(context)!;
+    if (doctor.latitude != null && doctor.longitude != null) {
+      try {
+        final latLngDoctor = LatLng(doctor.latitude!, doctor.longitude!);
+        double distanceKm = _locationService.calculateDistanceInKm(
+          _currentPosition,
+          latLngDoctor,
+        );
+
+        if (distanceKm < 1) {
+          return '${(distanceKm * 1000).round()} m';
+        } else {
+          return '${distanceKm.toStringAsFixed(1)} km';
+        }
+      } catch (e) {
+        debugPrint('Error calculating distance: $e');
+        return l10n.notAvailable;
+      }
+    }
+    return doctor.distance;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final userProvider = legacy_provider.Provider.of<UserProvider>(context);
+    final generalUnreadCountValue = ref.watch(generalUnreadCountProvider);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F6FF),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header & Search
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const PatientProfileScreen(),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      CustomImage(
+                                        imageUrl:
+                                            userProvider.user?.profileImage,
+                                        width: 56,
+                                        height: 56,
+                                        shape: BoxShape.circle,
+                                        placeholderAsset:
+                                            'assets/images/profile.png',
+                                      ),
+
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              userProvider.user?.fullName ??
+                                                  'The King',
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF1B2C49),
+                                              ),
+                                            ),
+                                            Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.location_on,
+                                                  size: 16,
+                                                  color: Colors.grey,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Text(
+                                                    userProvider
+                                                            .user
+                                                            ?.address ??
+                                                        'Location not set',
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.grey,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Container(), // Dummy for space
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const NotificationScreen(),
+                                  ),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      const Icon(
+                                        Icons.notifications_none_rounded,
+                                        size: 28,
+                                        color: Colors.black87,
+                                      ),
+                                      if (generalUnreadCountValue > 0)
+                                        Positioned(
+                                          top: 0,
+                                          right: 0,
+                                          child: Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: Colors.white,
+                                                width: 2,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // const SizedBox(height: 20),
+                          // Container(
+                          //   decoration: BoxDecoration(
+                          //     color: Colors.white,
+                          //     borderRadius: BorderRadius.circular(12),
+                          //     border: Border.all(
+                          //       color: Colors.black.withValues(alpha: 0.1),
+                          //     ),
+                          //   ),
+                          //   child: TextField(
+                          //     controller: _searchController,
+                          //     decoration: InputDecoration(
+                          //       hintText: l10n.searchDoctorHint,
+                          //       prefixIcon: const Icon(
+                          //         Icons.search,
+                          //         color: Colors.grey,
+                          //       ),
+                          //       border: InputBorder.none,
+                          //       contentPadding: EdgeInsets.symmetric(
+                          //         vertical: 15,
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
+                        ],
+                      ),
+                    ),
+
+                    // OpenStreetMap with Routes
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => FullMapScreen(
+                              currentPosition: _currentPosition,
+                              markers: _markers,
+                              polylines: _polylines,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 250,
+                        margin: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: _isLoadingLocation
+                              ? Container(
+                                  color: Colors.grey[200],
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : OsmMapWidget(
+                                  initialCenter: _currentPosition,
+                                  initialZoom: 13,
+                                  markers: _markers,
+                                  polylines: [
+                                    ..._polylines,
+                                    ..._directionPolylines,
+                                  ],
+                                  mapController: _mapController,
+                                  onMapReady: () {
+                                    setState(() => _isMapReady = true);
+                                    _mapController.move(_currentPosition, 14);
+                                  },
+                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 25),
+
+                    // Upcoming Appointment
+                    legacy_provider.Consumer<AppointmentProvider>(
+                      builder: (context, aptProvider, child) {
+                        final now = DateTime.now();
+                        final today = DateTime(now.year, now.month, now.day);
+
+                        final upcoming =
+                            aptProvider.upcomingAppointments.where((a) {
+                              final appointmentDay = DateTime(
+                                a.appointmentDate.year,
+                                a.appointmentDate.month,
+                                a.appointmentDate.day,
+                              );
+                              return appointmentDay.isAtSameMomentAs(today) ||
+                                  appointmentDay.isAfter(today);
+                            }).toList()..sort(
+                              (a, b) => a.appointmentDate.compareTo(
+                                b.appointmentDate,
+                              ),
+                            );
+
+                        if (upcoming.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.upcomingAppointment,
+                                style: const TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1B2C49),
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+                              UpcomingAppointmentCard(
+                                appointment: upcoming.first,
+                              ),
+                              const SizedBox(height: 25),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Nearby Doctors
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            l10n.nearbyDoctors,
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1B2C49),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SeeAllDoctorsScreen(),
+                              ),
+                            ),
+                            child: Text(
+                              l10n.seeAll,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+
+                    // Doctors List
+                    legacy_provider.Consumer<DoctorProvider>(
+                      builder: (context, doctorProvider, child) {
+                        if (doctorProvider.isLoading) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+
+                        if (doctorProvider.error != null) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Text('Error: ${doctorProvider.error}'),
+                            ),
+                          );
+                        }
+
+                        // ✅ কোনো distance filter নেই, সব ডাক্তার দেখাবে
+                        final nearbyDoctors = doctorProvider.nearbyDoctors;
+
+                        if (nearbyDoctors.isEmpty) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Text(l10n.noDoctorsFound),
+                            ),
+                          );
+                        }
+
+                        // ✅ Distance অনুযায়ী sort করুন (যাদের location আছে তারা আগে)
+                        nearbyDoctors.sort((a, b) {
+                          if (a.latitude == null || a.longitude == null) {
+                            return 1;
+                          }
+                          if (b.latitude == null || b.longitude == null) {
+                            return -1;
+                          }
+
+                          final distA = _calculateDistanceInKm(
+                            _currentPosition,
+                            LatLng(a.latitude!, a.longitude!),
+                          );
+                          final distB = _calculateDistanceInKm(
+                            _currentPosition,
+                            LatLng(b.latitude!, b.longitude!),
+                          );
+
+                          return distA.compareTo(distB);
+                        });
+
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: nearbyDoctors.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 20,
+                                left: 20,
+                                right: 20,
+                              ),
+                              child: _buildCustomDoctorCard(
+                                nearbyDoctors[index],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+
+            // if (_showLocationDialog)
+            //   Container(
+            //     color: Colors.black54,
+            //     child: LocationPermissionDialog(onDismiss: _dismissDialog),
+            //   ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 20,
+            height: 3,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isDoctorAvailable(Doctor doctor) {
+    if (doctor.weeklySchedule == null || doctor.weeklySchedule!.isEmpty) {
+      print('❌ ${doctor.fullName}: No weeklySchedule');
+      return false;
+    }
+
+    for (var schedule in doctor.weeklySchedule!) {
+      print(
+        '📅 ${doctor.fullName} - ${schedule.day}: active=${schedule.isActive}, slots=${schedule.slots.length}',
+      );
+
+      if (schedule.isActive && schedule.slots.isNotEmpty) {
+        print('✅ ${doctor.fullName}: Available on ${schedule.day}');
+        return true;
+      }
+    }
+
+    print('❌ ${doctor.fullName}: No active days with slots');
+    return false;
+  }
+
+  Widget _buildCustomDoctorCard(Doctor doctor) {
+    final l10n = AppLocalizations.of(context)!;
+    final bool isAvailable = _isDoctorAvailable(doctor);
+    final bool hasVideoCall = doctor.isVideoCallAvailable;
+    final String visitingHours = _getVisitingHours(doctor);
+
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.blue.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: _buildDoctorImage(doctor.image),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            doctor.fullName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isAvailable
+                                ? const Color(0xFFE8F5E9)
+                                : const Color(0xFFFFF3E0),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            isAvailable ? l10n.available : l10n.noSchedule,
+                            style: TextStyle(
+                              color: isAvailable
+                                  ? Colors.green[700]
+                                  : Colors.orange[700],
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      doctor.specialty,
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                    const SizedBox(height: 6),
+
+                    if (hasVideoCall)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE3F2FD),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: const Color(0xFF2196F3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.videocam,
+                              size: 14,
+                              color: Color(0xFF1976D2),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              l10n.videoConsultation,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF1565C0),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    if (hasVideoCall) const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            visitingHours,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          size: 16,
+                          color: Colors.orangeAccent,
+                        ),
+                        Text(
+                          ' ${doctor.rating.toStringAsFixed(1)} ',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 15),
+                        Icon(Icons.location_on, size: 16, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            _calculateDistance(doctor),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isAvailable
+                      ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                BookAppointmentScreen(doctor: doctor),
+                          ),
+                        )
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isAvailable
+                        ? const Color(0xFF0D47A1)
+                        : Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    isAvailable ? l10n.bookNow : l10n.notAvailable,
+                    style: TextStyle(
+                      color: isAvailable ? Colors.white : Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DoctorDetailsScreen(doctor: doctor),
+                  ),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F6FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF0D47A1),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDoctorImage(String? imageUrl) {
+    return CustomImage(
+      imageUrl: imageUrl,
+      width: 80,
+      height: 80,
+      fit: BoxFit.cover,
+      placeholderAsset: 'assets/images/doctor_booking.png',
+    );
+  }
+
+  String _getVisitingHours(Doctor doctor) {
+    final l10n = AppLocalizations.of(context)!;
+    if (doctor.weeklySchedule == null || doctor.weeklySchedule!.isEmpty) {
+      return l10n.noScheduleSet;
+    }
+
+    List<String> activeDays = [];
+    for (var schedule in doctor.weeklySchedule!) {
+      if (schedule.isActive && schedule.slots.isNotEmpty) {
+        String dayShort = schedule.day.length >= 3
+            ? schedule.day.substring(0, 3)
+            : schedule.day;
+        activeDays.add(dayShort);
+      }
+    }
+
+    if (activeDays.isEmpty) {
+      return l10n.noScheduleSet;
+    }
+
+    if (activeDays.length == 1) {
+      return activeDays[0];
+    } else if (activeDays.length <= 3) {
+      return activeDays.join(', ');
+    } else {
+      return '${activeDays.first}-${activeDays.last}';
+    }
+  }
+}
