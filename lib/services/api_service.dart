@@ -217,8 +217,65 @@ class ApiService {
           .eq('chat_id', chatId)
           .order('created_at', ascending: false)
           .range(from, to);
-      return {'success': true, 'data': data};
+      final List<dynamic> messages = data;
+      final formatted = messages.map((m) {
+        final map = Map<String, dynamic>.from(m);
+        map['type'] = map['content_type'] ?? map['type'] ?? 'text';
+        map['createdAt'] = map['created_at']; // UI expects createdAt
+        map['_id'] = map['id']; // Legacy _id
+
+        // Map profiles to sender for patient UI
+        if (map['profiles'] != null) {
+          final profile = map['profiles'];
+          map['sender'] = {
+            '_id': profile['id'],
+            'fullName': profile['full_name'],
+            'avatar': {'url': profile['avatar_url']},
+          };
+        }
+
+        // Map file_urls to fileUrl for patient UI
+        if (map['file_urls'] != null) {
+          map['fileUrl'] = (map['file_urls'] as List)
+              .map((url) => {'url': url})
+              .toList();
+        }
+
+        return map;
+      }).toList();
+
+      return {'success': true, 'data': formatted};
     } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getChatParticipants({
+    required String chatId,
+  }) async {
+    try {
+      final chatRes = await supabase
+          .from('chats')
+          .select('participants')
+          .eq('id', chatId)
+          .single();
+
+      final List<dynamic> participantIds = chatRes['participants'] ?? [];
+      if (participantIds.isEmpty) return {'success': true, 'data': {}};
+
+      final profilesRes = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, role')
+          .filter('id', 'in', '(${participantIds.join(',')})');
+
+      final Map<String, dynamic> profilesMap = {};
+      for (var p in profilesRes) {
+        profilesMap[p['id']] = p;
+      }
+
+      return {'success': true, 'data': profilesMap};
+    } catch (e) {
+      debugPrint('❌ Error getChatParticipants: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -272,32 +329,28 @@ class ApiService {
       final currentUserId = supabase.auth.currentUser?.id;
       if (currentUserId == null) throw Exception('Not logged in');
 
-      final existing = await supabase
-          .from('chats')
-          .select()
-          .filter(
-            'participants',
-            'cs',
-            '[{"user_id": "$userId"}, {"user_id": "$currentUserId"}]',
-          )
-          .maybeSingle();
+      final existing = await supabase.from('chats').select().contains(
+        'participants',
+        [userId, currentUserId],
+      ).maybeSingle();
 
       if (existing != null) {
-        return {'success': true, 'data': existing};
+        final data = Map<String, dynamic>.from(existing);
+        data['_id'] = data['id']; // Legacy compatibility
+        return {'success': true, 'data': data};
       }
 
       final newChat = await supabase
           .from('chats')
           .insert({
-            'participants': [
-              {'user_id': currentUserId},
-              {'user_id': userId},
-            ],
+            'participants': [currentUserId, userId],
           })
           .select()
           .single();
 
-      return {'success': true, 'data': newChat};
+      final data = Map<String, dynamic>.from(newChat);
+      data['_id'] = data['id']; // Legacy compatibility
+      return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Error createOrGetChat: $e');
       return {'success': false, 'message': e.toString()};
@@ -310,6 +363,9 @@ class ApiService {
     String type = 'text',
     List<File>? files,
   }) async {
+    debugPrint(
+      '🚀 [ApiService] sendMessage called. ChatId: $chatId, Type: $type',
+    );
     try {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) throw Exception('Not logged in');
@@ -332,7 +388,7 @@ class ApiService {
             'chat_id': chatId,
             'sender_id': userId,
             'content': content,
-            'type': type,
+            'content_type': type, // Use content_type from schema
             'file_urls': fileUrls,
           })
           .select()
@@ -343,8 +399,17 @@ class ApiService {
           .update({'updated_at': DateTime.now().toIso8601String()})
           .eq('id', chatId);
 
-      return {'success': true, 'data': data};
+      final map = Map<String, dynamic>.from(data);
+      map['type'] = map['content_type'] ?? map['type'] ?? 'text';
+      map['createdAt'] = map['created_at'];
+      map['_id'] = map['id'];
+      map['fileUrl'] =
+          (map['file_urls'] as List?)?.map((url) => {'url': url}).toList() ??
+          [];
+
+      return {'success': true, 'data': map};
     } catch (e) {
+      debugPrint('❌ Error sendMessage: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -605,17 +670,27 @@ class ApiService {
     int page = 1,
     int limit = 20,
   }) async {
+    final from = (page - 1) * limit;
+    final to = from + limit - 1;
     try {
-      final from = (page - 1) * limit;
-      final to = from + limit - 1;
       final data = await supabase
           .from('posts')
-          .select('*, profiles(*)')
+          .select('*, author:profiles!posts_user_id_fkey(*)')
           .order('created_at', ascending: false)
           .range(from, to);
       return {'success': true, 'data': data};
     } catch (e) {
-      return {'success': false, 'message': e.toString()};
+      // Fallback for missing FK constraint name or explicit join
+      try {
+        final data = await supabase
+            .from('posts')
+            .select('*, author:profiles!user_id(*)')
+            .order('created_at', ascending: false)
+            .range(from, to);
+        return {'success': true, 'data': data};
+      } catch (e2) {
+        return {'success': false, 'message': e.toString()};
+      }
     }
   }
 
@@ -625,17 +700,51 @@ class ApiService {
     String visibility = 'public',
   }) async {
     try {
+      final userId = supabase.auth.currentUser?.id;
+      List<Map<String, dynamic>> mediaList = [];
+
+      // 1. Upload files to Storage if present
+      if (mediaFiles != null && mediaFiles.isNotEmpty) {
+        for (final file in mediaFiles) {
+          final uploadResult = await uploadFile(
+            filePath: file.path,
+            bucket: 'uploads',
+            path:
+                'posts/$userId/${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}',
+          );
+
+          if (uploadResult['success'] == true) {
+            final url = uploadResult['url'];
+            final isVideo =
+                file.path.toLowerCase().endsWith('.mp4') ||
+                file.path.toLowerCase().endsWith('.mov') ||
+                file.path.toLowerCase().endsWith('.avi');
+
+            mediaList.add({
+              'url': url,
+              'public_id': url.split('/').last,
+              'resourceType': isVideo ? 'video' : 'image',
+              'mimeType': isVideo ? 'video/mp4' : 'image/jpeg',
+            });
+          }
+        }
+      }
+
+      // 2. Insert post with media metadata
       final data = await supabase
           .from('posts')
           .insert({
             'content': content,
-            'user_id': supabase.auth.currentUser?.id,
+            'user_id': userId,
             'visibility': visibility,
+            'media': mediaList, // Store as JSONB
           })
           .select()
           .single();
+
       return {'success': true, 'data': data};
     } catch (e) {
+      debugPrint('❌ Error in createPost: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -645,18 +754,28 @@ class ApiService {
     int page = 1,
     int limit = 20,
   }) async {
+    final from = (page - 1) * limit;
+    final to = from + limit - 1;
     try {
-      final from = (page - 1) * limit;
-      final to = from + limit - 1;
       final data = await supabase
           .from('posts')
-          .select('*, profiles(*)')
+          .select('*, author:profiles!posts_user_id_fkey(*)')
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .range(from, to);
       return {'success': true, 'data': data};
     } catch (e) {
-      return {'success': false, 'message': e.toString()};
+      try {
+        final data = await supabase
+            .from('posts')
+            .select('*, author:profiles!user_id(*)')
+            .eq('user_id', userId)
+            .order('created_at', ascending: false)
+            .range(from, to);
+        return {'success': true, 'data': data};
+      } catch (e2) {
+        return {'success': false, 'message': e.toString()};
+      }
     }
   }
 
@@ -682,8 +801,46 @@ class ApiService {
     String visibility = 'public',
   }) async {
     try {
-      return {'success': true};
+      if (videoFile == null) {
+        return {'success': false, 'message': 'Video file is required'};
+      }
+
+      final userId = supabase.auth.currentUser?.id;
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${videoFile.path.split('/').last}';
+      final storagePath = 'reels/$userId/$fileName';
+
+      // 1. Upload video to storage
+      final uploadResult = await uploadFile(
+        filePath: videoFile.path,
+        bucket: 'uploads',
+        path: storagePath,
+      );
+
+      if (uploadResult['success'] != true) {
+        return uploadResult;
+      }
+
+      final videoUrl = uploadResult['url'];
+
+      // 2. Insert into reels table
+      final data = await supabase
+          .from('reels')
+          .insert({
+            'user_id': userId,
+            'video_url': videoUrl,
+            'caption': caption,
+            'visibility': visibility,
+            'media': [
+              {'url': videoUrl, 'resourceType': 'video', 'public_id': fileName},
+            ],
+          })
+          .select()
+          .single();
+
+      return {'success': true, 'data': data};
     } catch (e) {
+      debugPrint('❌ Error in createReel: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -736,6 +893,7 @@ class ApiService {
           .single();
       return {'success': true, 'data': data};
     } catch (e) {
+      debugPrint('❌ Error initiateCall: $e');
       return {'success': false, 'message': e.toString()};
     }
   }

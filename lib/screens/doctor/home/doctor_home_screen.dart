@@ -11,7 +11,7 @@ import 'package:aroggyapath/providers/user_provider.dart';
 import 'dart:async';
 
 import 'widgets/doctor_home_header.dart';
-import 'widgets/doctor_home_search.dart';
+// import 'widgets/doctor_home_search.dart';
 import 'widgets/search_suggestions_section.dart';
 import 'widgets/create_post_box.dart';
 import 'widgets/doctor_info_bottom_sheet.dart';
@@ -212,24 +212,34 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
     });
 
     try {
-      final result = await ApiService.get(
-        '/api/v1/posts/all-posts?page=$_currentPage&limit=20',
-        requiresAuth: true,
+      final result = await ApiService.getAllPosts(
+        page: _currentPage,
+        limit: 20,
       );
 
       if (!mounted) return;
 
       if (result['success'] == true) {
-        final postsData = result['data']?['items'] ?? [];
-        final pagination = result['data']?['pagination'] ?? {};
+        final List<dynamic> postsData = result['data'] ?? [];
 
         setState(() {
-          _posts = postsData
-              .map<PostModel>((p) => PostModel.fromJson(p))
-              .toList();
-          _currentPage = 1;
-          _hasMore =
-              (pagination['page'] * pagination['limit']) < pagination['total'];
+          if (_currentPage == 1) {
+            _posts = postsData
+                .map<PostModel>(
+                  (p) => PostModel.fromJson(Map<String, dynamic>.from(p)),
+                )
+                .toList();
+          } else {
+            _posts.addAll(
+              postsData
+                  .map<PostModel>(
+                    (p) => PostModel.fromJson(Map<String, dynamic>.from(p)),
+                  )
+                  .toList(),
+            );
+          }
+
+          _hasMore = postsData.length == 20;
           _isLoading = false;
           _errorMessage = null;
         });
@@ -253,30 +263,46 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
   Future<void> _loadMorePosts() async {
     if (_isLoading || !_hasMore) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
+
+    _currentPage++;
 
     try {
-      final result = await ApiService.get(
-        '/api/v1/posts/all-posts?page=${_currentPage + 1}&limit=20',
-        requiresAuth: true,
+      final result = await ApiService.getAllPosts(
+        page: _currentPage,
+        limit: 20,
       );
 
+      if (!mounted) return;
+
       if (result['success'] == true) {
-        final postsData = result['data']?['items'] ?? [];
-        final pagination = result['data']?['pagination'] ?? {};
+        final List<dynamic> postsData = result['data'] ?? [];
 
         setState(() {
           _posts.addAll(
-            postsData.map<PostModel>((p) => PostModel.fromJson(p)).toList(),
+            postsData
+                .map<PostModel>(
+                  (p) => PostModel.fromJson(Map<String, dynamic>.from(p)),
+                )
+                .toList(),
           );
-          _currentPage++;
-          _hasMore =
-              (pagination['page'] * pagination['limit']) < pagination['total'];
+          _hasMore = postsData.length == 20;
           _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _currentPage--; // Revert page on failure
         });
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _currentPage--;
+      });
     }
   }
 
@@ -345,24 +371,7 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
           controller: _scrollController,
           slivers: [
             SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  DoctorHomeHeader(onProfileTap: _navigateToProfile),
-                  DoctorHomeSearch(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    isSearchLoading: _isSearchLoading,
-                    onClear: () {
-                      _searchController.clear();
-                      setState(() {
-                        _isSearching = false;
-                        _searchResults.clear();
-                        _searchSuggestions.clear();
-                      });
-                    },
-                  ),
-                ],
-              ),
+              child: DoctorHomeHeader(onProfileTap: _navigateToProfile),
             ),
 
             if (_isSearching &&
@@ -375,117 +384,127 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
                 ),
               ),
 
-            SliverToBoxAdapter(child: _buildContent()),
+            // Always show CreatePostBox if not searching
+            if (!_isSearching)
+              SliverToBoxAdapter(
+                child: CreatePostBox(
+                  onNavigateToCreatePost: _navigateToCreatePost,
+                ),
+              ),
+
+            _buildSliverContent(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildSliverContent() {
     final l10n = AppLocalizations.of(context)!;
 
     if (_isSearching) {
       if (_isSearchLoading && _searchController.text.isNotEmpty) {
-        return _buildLoadingState(l10n.searching);
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: _buildLoadingState(l10n.searching),
+        );
       }
 
       if (_searchController.text.isEmpty) {
-        return _buildSearchEmptyState(
-          icon: Icons.search,
-          title: l10n.searchAnything,
-          subtitle: l10n.findEverything,
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: _buildSearchEmptyState(
+            icon: Icons.search,
+            title: l10n.searchAnything,
+            subtitle: l10n.findEverything,
+          ),
         );
       }
 
       if (_searchResults.isEmpty && !_isSearchLoading) {
-        return _buildSearchEmptyState(
-          icon: Icons.search_off,
-          title: l10n.noResultsFound,
-          subtitle: l10n.tryDifferentKeywords,
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: _buildSearchEmptyState(
+            icon: Icons.search_off,
+            title: l10n.noResultsFound,
+            subtitle: l10n.tryDifferentKeywords,
+          ),
         );
       }
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                const Icon(Icons.article, size: 20, color: Color(0xFF1664CD)),
-                const SizedBox(width: 8),
-                Text(
-                  '${l10n.posts} (${_searchResults.length})',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1B2C49),
+      return SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.article, size: 20, color: Color(0xFF1664CD)),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${l10n.posts} (${_searchResults.length})',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B2C49),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            itemCount: _searchResults.length,
-            itemBuilder: (context, index) {
-              return PostCard(
-                post: _searchResults[index],
-                onPostUpdated: () {
-                  _performSearch(_currentSearchQuery);
-                },
-                onAuthorTap: (authorData) {
-                  _showDoctorInfo(authorData);
-                },
-              );
+                ],
+              ),
+            );
+          }
+          return PostCard(
+            post: _searchResults[index - 1],
+            onPostUpdated: () {
+              _performSearch(_currentSearchQuery);
             },
-          ),
-        ],
+            onAuthorTap: (authorData) {
+              _showDoctorInfo(authorData);
+            },
+          );
+        }, childCount: _searchResults.length + 1),
       );
     }
 
     if (_isLoading && _posts.isEmpty) {
-      return _buildLoadingState(null);
+      return const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (_errorMessage != null) {
-      return _buildErrorState(l10n);
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: _buildErrorState(l10n),
+      );
     }
 
-    return Column(
-      children: [
-        CreatePostBox(onNavigateToCreatePost: _navigateToCreatePost),
+    if (_posts.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: _buildNoPostsState(l10n),
+      );
+    }
 
-        if (_posts.isEmpty)
-          _buildNoPostsState(l10n)
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            itemCount: _posts.length + (_hasMore ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index == _posts.length) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
-              return PostCard(
-                post: _posts[index],
-                onPostUpdated: _refreshData,
-                onAuthorTap: (authorData) {
-                  _showDoctorInfo(authorData);
-                },
-              );
-            },
-          ),
-      ],
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == _posts.length) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        return PostCard(
+          post: _posts[index],
+          onPostUpdated: _refreshData,
+          onAuthorTap: (authorData) {
+            _showDoctorInfo(authorData);
+          },
+        );
+      }, childCount: _posts.length + (_hasMore ? 1 : 0)),
     );
   }
 

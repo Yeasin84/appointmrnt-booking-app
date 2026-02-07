@@ -55,13 +55,25 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   }
 
   String get doctorId {
+    // 1. Try to get from widget.doctor map
     if (widget.doctor is Map<String, dynamic>) {
       final map = widget.doctor as Map<String, dynamic>;
-      return (map['_id'] ?? map['id'] ?? '').toString();
+      final id = (map['_id'] ?? map['id'])?.toString();
+      if (id != null && id.isNotEmpty) return id;
     }
+
+    // 2. Try to get from widget.doctor object
     if (widget.doctor is Doctor) {
       return (widget.doctor as Doctor).id;
     }
+
+    // 3. ✅ Fallback: Use existing appointment's doctorId if rescheduling
+    if (widget.isReschedule &&
+        widget.existingAppointment != null &&
+        widget.existingAppointment!.doctorId.isNotEmpty) {
+      return widget.existingAppointment!.doctorId;
+    }
+
     return '';
   }
 

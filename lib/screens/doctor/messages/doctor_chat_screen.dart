@@ -54,6 +54,8 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
   bool _isAutoScrollEnabled = true;
   final Set<String> _selectedMessageIds = {}; // ✅ For multi-select delete
   bool _isSelectionMode = false; // ✅ Selection mode toggle
+  Map<String, dynamic> _participantProfiles =
+      {}; // ✅ For looking up avatars in Realtime
 
   @override
   void initState() {
@@ -63,6 +65,7 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
     _actualUserAvatar = widget.userAvatar;
     _actualUserName = widget.userName;
     _loadCurrentUserProfile().then((_) {
+      _loadChatParticipants();
       _loadMessages();
       _setupSupabaseListener();
     });
@@ -97,6 +100,22 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
     }
   }
 
+  Future<void> _loadChatParticipants() async {
+    try {
+      final res = await ApiService.getChatParticipants(chatId: widget.chatId);
+      if (res['success'] == true) {
+        setState(() {
+          _participantProfiles = res['data'];
+        });
+        debugPrint(
+          '✅ Chat participants loaded: ${_participantProfiles.keys.length}',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading chat participants: $e');
+    }
+  }
+
   Future<void> _loadMessages() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
@@ -119,11 +138,16 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
     }
   }
 
+  StreamSubscription? _messagesSubscription;
+
   void _setupSupabaseListener() {
-    ApiService.supabase
+    _messagesSubscription = ApiService.supabase
         .from('messages')
         .stream(primaryKey: ['id'])
         .eq('chat_id', widget.chatId)
+        .handleError((error) {
+          debugPrint('❌ Message stream error: $error');
+        })
         .listen((data) {
           if (mounted) {
             setState(() {
@@ -234,6 +258,9 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
 
   Future<void> _sendMessage() async {
     final content = _controller.text.trim();
+    debugPrint(
+      '📩 [Doctor] _sendMessage triggered. Content: "$content", Files: ${_selectedFiles.length}',
+    );
 
     debugPrint(
       '📤 [Doctor] Attempting to send message. Content length: ${content.length}',
@@ -265,6 +292,16 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
           _isAutoScrollEnabled = true;
         });
         _scrollToBottom();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result['message'] ??
+                  AppLocalizations.of(context)!.failedToSendMessage,
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       debugPrint('❌ [Doctor] Error sending message: $e');
@@ -550,9 +587,13 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
                     itemCount: _messages.length,
                     separatorBuilder: (context, index) {
                       final currentDate =
-                          _messages[index]['createdAt'] as String;
+                          _messages[index]['created_at']?.toString() ??
+                          _messages[index]['createdAt']?.toString() ??
+                          '';
                       final nextDate = (index + 1 < _messages.length)
-                          ? _messages[index + 1]['createdAt'] as String
+                          ? (_messages[index + 1]['created_at']?.toString() ??
+                                _messages[index + 1]['createdAt']?.toString() ??
+                                '')
                           : null;
 
                       if (nextDate != null &&
@@ -566,7 +607,9 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
                         return Column(
                           children: [
                             ChatDateSeparator(
-                              timestamp: _messages[0]['createdAt'],
+                              timestamp:
+                                  _messages[0]['created_at'] ??
+                                  _messages[0]['createdAt'],
                             ),
                             _buildItem(index),
                           ],
@@ -605,14 +648,17 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
     final String senderId = message['sender_id']?.toString() ?? '';
     final bool isMe = _currentUserId != null && senderId == _currentUserId;
 
+    // Look up profile from cache if not joined (joins don't work in Realtime stream)
+    final profile = _participantProfiles[senderId] ?? message['profiles'];
+
     return MessageBubble(
       messageId: msgId,
       content: message['content']?.toString() ?? '',
       isMe: isMe,
-      senderAvatar: message['profiles']?['avatar_url']?.toString(),
+      senderAvatar: profile?['avatar_url']?.toString(),
       currentUserAvatar: _currentUserAvatar,
       fileUrls: List<String>.from(message['file_urls'] ?? []),
-      formattedTime: _formatTime(message['created_at']),
+      formattedTime: _formatTime(message['created_at'] ?? message['createdAt']),
       isSelected: _selectedMessageIds.contains(msgId),
       onTap: _isSelectionMode ? () => _toggleSelection(msgId) : null,
       onLongPress: () => _toggleSelection(msgId),
@@ -653,6 +699,7 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen> {
 
   @override
   void dispose() {
+    _messagesSubscription?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();

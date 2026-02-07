@@ -45,22 +45,32 @@ class AppointmentModel {
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
     // ✅ Safely parse doctor object
-    final doctorData = json['doctor'];
-    String doctorId = '';
+    // ✅ Safely parse doctor object
+    final doctorData =
+        json['doctor'] ?? json['doctors']; // Handle 'doctors' alias
+    String doctorId = json['doctor_id']?.toString() ?? ''; // Fallback to FK
+
     String? doctorName;
     String? doctorImage;
     String? specialty;
 
     if (doctorData != null) {
       if (doctorData is Map<String, dynamic>) {
-        doctorId = doctorData['_id'] ?? '';
-        doctorName = doctorData['fullName'];
+        // If the joined object has an ID, use it, otherwise keep the FK
+        final objId = doctorData['_id'] ?? doctorData['id'];
+        if (objId != null) doctorId = objId.toString();
+
+        doctorName =
+            doctorData['fullName'] ??
+            doctorData['full_name']; // Handle snake_case
         specialty = doctorData['specialty'];
 
         // Handle nested avatar object
         final avatar = doctorData['avatar'];
         if (avatar != null && avatar is Map<String, dynamic>) {
           doctorImage = avatar['url'];
+        } else if (doctorData['avatar_url'] != null) {
+          doctorImage = doctorData['avatar_url'];
         }
       } else if (doctorData is String) {
         doctorId = doctorData;
@@ -68,20 +78,27 @@ class AppointmentModel {
     }
 
     // ✅ Safely parse patient object
-    final patientData = json['patient'];
-    String patientId = '';
+    final patientData =
+        json['patient'] ?? json['patients']; // Handle 'patients' alias
+    String patientId = json['patient_id']?.toString() ?? ''; // Fallback to FK
+
     String? patientName;
     String? patientImage;
 
     if (patientData != null) {
       if (patientData is Map<String, dynamic>) {
-        patientId = patientData['_id'] ?? '';
-        patientName = patientData['fullName'];
+        // If the joined object has an ID, use it, otherwise keep the FK
+        final objId = patientData['_id'] ?? patientData['id'];
+        if (objId != null) patientId = objId.toString();
+
+        patientName = patientData['fullName'] ?? patientData['full_name'];
 
         // Handle nested avatar object
         final avatar = patientData['avatar'];
         if (avatar != null && avatar is Map<String, dynamic>) {
           patientImage = avatar['url'];
+        } else if (patientData['avatar_url'] != null) {
+          patientImage = patientData['avatar_url'];
         }
       } else if (patientData is String) {
         patientId = patientData;

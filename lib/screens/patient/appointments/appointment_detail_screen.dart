@@ -435,7 +435,8 @@ class AppointmentDetailScreen extends StatelessWidget {
       Navigator.pop(context);
 
       if (result['success'] == true) {
-        final chatId = result['data']['_id']?.toString();
+        final chatData = result['data'];
+        final chatId = (chatData['id'] ?? chatData['_id'])?.toString();
 
         if (chatId == null || chatId.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(

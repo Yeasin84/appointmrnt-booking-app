@@ -441,7 +441,7 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
 
       if (result['success'] == true) {
         final chatData = result['data'];
-        final chatId = chatData['_id']?.toString();
+        final chatId = (chatData['id'] ?? chatData['_id'])?.toString();
 
         if (chatId == null || chatId.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -455,18 +455,11 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
 
         debugPrint('✅ Chat ID: $chatId');
 
-        final participants = chatData['participants'] as List?;
-        String? doctorAvatar;
-
-        if (participants != null) {
-          final doctorParticipant = participants.firstWhere(
-            (p) => p['_id'] == doctorId,
-            orElse: () => null,
-          );
-
-          if (doctorParticipant != null) {
-            doctorAvatar = doctorParticipant['avatar']?['url'];
-          }
+        // Participants is now List<String> (UUIDs), so we can't get avatar from it directly.
+        // We already have the doctor's details in widget.doctor.
+        String? doctorAvatar = widget.doctor.image;
+        if (!doctorAvatar.startsWith('http')) {
+          doctorAvatar = null;
         }
 
         if (context.mounted) {

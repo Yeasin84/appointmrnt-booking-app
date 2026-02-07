@@ -17,28 +17,41 @@ class PatientMessagesListScreen extends StatefulWidget {
 class _PatientMessagesListScreenState extends State<PatientMessagesListScreen> {
   List<dynamic> _chats = [];
   bool _isLoading = true;
-  String? _currentUserId;
+  String? _currentUserId; // ✅ Restored
   final Set<String> _selectedConversationIds = {}; // ✅ For multi-select delete
   bool _isSelectionMode = false; // ✅ Selection mode toggle
 
   @override
   void initState() {
     super.initState();
+    _currentUserId = ApiService.supabase.auth.currentUser?.id; // ✅ Init
     _loadCurrentUserId();
     _loadChats();
     _setupSupabaseListener();
   }
 
+  StreamSubscription? _chatsSubscription;
+
+  @override
+  void dispose() {
+    _chatsSubscription?.cancel();
+    super.dispose();
+  }
+
   // ✅ Setup Supabase listener for real-time updates
   void _setupSupabaseListener() {
     final supabase = ApiService.supabase;
-    supabase.from('chats').stream(primaryKey: ['id']).listen((
-      List<Map<String, dynamic>> data,
-    ) {
-      if (mounted) {
-        _loadChats(quiet: true);
-      }
-    });
+    _chatsSubscription = supabase
+        .from('chats')
+        .stream(primaryKey: ['id'])
+        .handleError((error) {
+          debugPrint('❌ Stream error: $error');
+        })
+        .listen((List<Map<String, dynamic>> data) {
+          if (mounted) {
+            _loadChats(quiet: true);
+          }
+        });
   }
 
   Future<void> _loadCurrentUserId() async {
@@ -55,34 +68,57 @@ class _PatientMessagesListScreenState extends State<PatientMessagesListScreen> {
   }
 
   Future<void> _loadChats({bool quiet = false}) async {
-    if (!quiet) setState(() => _isLoading = true);
-
+    if (!quiet) {
+      setState(() => _isLoading = true);
+    }
     try {
-      final result = await ApiService.getConversations();
+      final res = await ApiService.getConversations();
+      if (res['success'] == true && mounted) {
+        final List chats = res['data'];
+        final List<Map<String, dynamic>> formattedChats = [];
 
-      if (result['success'] == true) {
-        final List<dynamic> chatsData = result['data'];
-        List<Map<String, dynamic>> formattedChats = [];
-
-        for (var chat in chatsData) {
-          final List participants = chat['participants'] as List;
-          final otherParticipant = participants.firstWhere(
-            (p) => p['user_id'] != _currentUserId,
-            orElse: () => participants[0],
-          );
-          final otherUserId = otherParticipant['user_id'];
-
-          // Resolve profile
-          String userName = 'Doctor';
-          String? avatarUrl;
-
-          final profileResult = await ApiService.getUserProfile(
-            userId: otherUserId,
-          );
-          if (profileResult['success'] == true) {
-            userName = profileResult['data']['full_name'] ?? 'Doctor';
-            avatarUrl = profileResult['data']['avatar_url'];
+        // 1. Collect all participant IDs
+        final Set<String> participantIds = {};
+        for (var chat in chats) {
+          final parts = chat['participants'];
+          if (parts is List) {
+            for (var p in parts) {
+              if (p is String) participantIds.add(p);
+            }
           }
+        }
+
+        // 2. Fetch profiles for all participants
+        final Map<String, dynamic> profilesMap = {};
+        if (participantIds.isNotEmpty) {
+          final profilesRes = await ApiService.supabase
+              .from('profiles')
+              .select('id, full_name, avatar_url, role')
+              .filter('id', 'in', '(${participantIds.join(',')})');
+
+          for (var p in profilesRes) {
+            profilesMap[p['id']] = p;
+          }
+        }
+
+        for (var chat in chats) {
+          final participants = chat['participants'] as List?;
+          if (participants == null || participants.isEmpty) continue;
+
+          // Find other participant ID
+          String? otherUserId;
+          for (var p in participants) {
+            if (p is String && p != _currentUserId) {
+              otherUserId = p;
+              break;
+            }
+          }
+
+          if (otherUserId == null) continue;
+
+          final profile = profilesMap[otherUserId];
+          final userName = profile?['full_name'] ?? 'Unknown User';
+          final avatarUrl = profile?['avatar_url'];
 
           final lastMessageList = chat['messages'] as List?;
           final lastMessage =
@@ -515,10 +551,5 @@ class _PatientMessagesListScreenState extends State<PatientMessagesListScreen> {
     } else {
       return AppLocalizations.of(context)!.justNow;
     }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

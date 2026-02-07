@@ -633,22 +633,21 @@ class _PostCardState extends State<PostCard> {
       );
     }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
-      itemCount: images.length > 6 ? 6 : images.length,
-      itemBuilder: (context, index) {
-        if (index == 5 && images.length > 6) {
-          return Stack(
+    int count = images.length > 6 ? 6 : images.length;
+    List<Widget> rows = [];
+
+    for (int i = 0; i < count; i += 3) {
+      int end = (i + 3 < count) ? i + 3 : count;
+      List<Widget> rowItems = [];
+
+      for (int j = i; j < end; j++) {
+        Widget item;
+        if (j == 5 && images.length > 6) {
+          item = Stack(
             fit: StackFit.expand,
             children: [
               CustomImage(
-                imageUrl: images[index].url,
+                imageUrl: images[j].url,
                 fit: BoxFit.cover,
                 height: double.infinity,
                 width: double.infinity,
@@ -668,10 +667,29 @@ class _PostCardState extends State<PostCard> {
               ),
             ],
           );
+        } else {
+          item = CustomImage(imageUrl: images[j].url, fit: BoxFit.cover);
         }
-        return CustomImage(imageUrl: images[index].url, fit: BoxFit.cover);
-      },
-    );
+
+        rowItems.add(
+          Expanded(
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Padding(padding: const EdgeInsets.all(1), child: item),
+            ),
+          ),
+        );
+      }
+
+      // Add empty spacers if row is not full
+      while (rowItems.length < 3) {
+        rowItems.add(const Expanded(child: SizedBox()));
+      }
+
+      rows.add(Row(children: rowItems));
+    }
+
+    return Column(children: rows);
   }
 
   Widget _buildActionButton({

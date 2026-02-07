@@ -48,15 +48,10 @@ class SearchSuggestionsSection extends StatelessWidget {
               ],
             ),
           ),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 8),
-            itemCount: suggestions.length,
-            separatorBuilder: (context, index) =>
-                Divider(height: 1, indent: 60, color: Colors.grey[200]),
-            itemBuilder: (context, index) {
-              final suggestion = suggestions[index];
+          Column(
+            children: suggestions.asMap().entries.map((entry) {
+              final index = entry.key;
+              final suggestion = entry.value;
               final type = suggestion['type'];
               final text = suggestion['text'] ?? '';
               final subtext = suggestion['subtext'] ?? '';
@@ -87,57 +82,67 @@ class SearchSuggestionsSection extends StatelessWidget {
                   bgColor = Colors.grey.withValues(alpha: 0.1);
               }
 
-              return InkWell(
-                onTap: () => onSuggestionTap(suggestion),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(icon, size: 20, color: iconColor),
+              return Column(
+                children: [
+                  if (index > 0)
+                    Divider(height: 1, indent: 60, color: Colors.grey[200]),
+                  InkWell(
+                    onTap: () => onSuggestionTap(suggestion),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              text,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF1B2C49),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            if (subtext.isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                subtext,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
+                            child: Icon(icon, size: 20, color: iconColor),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  text,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF1B2C49),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
-                          ],
-                        ),
+                                if (subtext.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    subtext,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.north_west,
+                            size: 16,
+                            color: Colors.grey[400],
+                          ),
+                        ],
                       ),
-                      Icon(Icons.north_west, size: 16, color: Colors.grey[400]),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               );
-            },
+            }).toList(),
           ),
         ],
       ),

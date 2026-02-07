@@ -115,7 +115,12 @@ class ChatInput extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: onSendMessage,
+                  onTap: () {
+                    debugPrint(
+                      '🖱️ [ChatInput] Send button tapped. isSending: $isSending',
+                    );
+                    onSendMessage();
+                  },
                   child: Container(
                     margin: const EdgeInsets.all(4),
                     padding: const EdgeInsets.all(10),

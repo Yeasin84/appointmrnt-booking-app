@@ -30,7 +30,8 @@ class PostModel {
       id: json['_id'] ?? json['id'] ?? '',
       content: json['content'] ?? '',
       author: PostAuthor.fromJson(json['author'] ?? {}),
-      media: (json['media'] as List<dynamic>?)
+      media:
+          (json['media'] as List<dynamic>?)
               ?.map((m) => PostMedia.fromJson(m))
               .toList() ??
           [],
@@ -94,7 +95,7 @@ class PostModel {
 
   String get timeAgo {
     final difference = DateTime.now().difference(createdAt);
-    
+
     if (difference.inDays > 365) {
       return '${(difference.inDays / 365).floor()}y';
     } else if (difference.inDays > 30) {
@@ -135,7 +136,7 @@ class PostAuthor {
 
   factory PostAuthor.fromJson(Map<String, dynamic> json) {
     String? avatarUrl;
-    
+
     if (json['avatar'] != null) {
       if (json['avatar'] is Map) {
         avatarUrl = json['avatar']['url'];
@@ -143,6 +144,9 @@ class PostAuthor {
         avatarUrl = json['avatar'];
       }
     }
+
+    avatarUrl ??=
+        json['avatar_url'] ?? json['profile_image'] ?? json['profileImage'];
 
     // ✅ Parse degrees list
     List<Map<String, dynamic>>? degreesList;
@@ -154,7 +158,8 @@ class PostAuthor {
 
     return PostAuthor(
       id: json['_id'] ?? json['id'] ?? '',
-      fullName: json['fullName'] ?? json['name'] ?? 'Unknown',
+      fullName:
+          json['fullName'] ?? json['full_name'] ?? json['name'] ?? 'Unknown',
       avatar: avatarUrl,
       role: json['role'] ?? 'user',
       specialty: json['specialty'],
@@ -196,7 +201,7 @@ class PostMedia {
     this.originalName,
     this.mimeType,
     this.size,
-    this.thumbnail, 
+    this.thumbnail,
   });
 
   factory PostMedia.fromJson(Map<String, dynamic> json) {
@@ -234,8 +239,10 @@ class PostMedia {
     };
   }
 
-  bool get isVideo => resourceType == 'video' || mimeType?.contains('video') == true;
-  bool get isImage => resourceType == 'image' || mimeType?.contains('image') == true;
+  bool get isVideo =>
+      resourceType == 'video' || mimeType?.contains('video') == true;
+  bool get isImage =>
+      resourceType == 'image' || mimeType?.contains('image') == true;
 }
 
 class PostComment {
@@ -267,7 +274,7 @@ class PostComment {
 
   String get timeAgo {
     final difference = DateTime.now().difference(createdAt);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays}d';
     } else if (difference.inHours > 0) {

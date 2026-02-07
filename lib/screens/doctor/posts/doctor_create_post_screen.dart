@@ -270,14 +270,14 @@ class _DoctorCreatePostScreenState extends State<DoctorCreatePostScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 15, top: 10, bottom: 10),
-            child: ElevatedButton(
+            child: TextButton(
               onPressed: _isUploading ? null : _handlePost,
-              style: ElevatedButton.styleFrom(
+              style: TextButton.styleFrom(
                 backgroundColor: const Color(0xFF0D53C1),
+                padding: const EdgeInsets.symmetric(horizontal: 25),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 25),
               ),
               child: _isUploading
                   ? const SizedBox(

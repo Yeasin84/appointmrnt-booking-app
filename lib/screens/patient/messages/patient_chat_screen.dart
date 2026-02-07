@@ -41,6 +41,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   bool _isLoading = true;
   bool _isSending = false;
   List<File> _selectedFiles = [];
+  Map<String, dynamic> _participantProfiles =
+      {}; // ✅ For looking up avatars in Realtime
   String? _currentUserId;
   String? _currentUserAvatar;
   String? _currentUserName;
@@ -58,8 +60,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     _actualDoctorAvatar = widget.doctorAvatar;
     _actualDoctorName = widget.doctorName;
     _loadCurrentUserProfile().then((_) {
+      _loadChatParticipants();
       _loadMessages();
-      _setupRealtimeListeners();
+      _setupSupabaseListener();
     });
 
     _scrollController.addListener(() {
@@ -73,18 +76,23 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   final supabase = ApiService.supabase;
 
-  void _setupRealtimeListeners() {
-    supabase
+  StreamSubscription? _messagesSubscription;
+
+  void _setupSupabaseListener() {
+    _messagesSubscription = supabase
         .from('messages')
         .stream(primaryKey: ['id'])
         .eq('chat_id', widget.chatId)
+        .order('created_at', ascending: true)
+        .handleError((error) {
+          debugPrint('❌ Message stream error: $error');
+          if (mounted) setState(() => _isLoading = false);
+        })
         .listen((List<Map<String, dynamic>> data) {
           if (mounted) {
-            final List<dynamic> formatted = data
-                .map((m) => _convertSupabaseMessage(m))
-                .toList();
             setState(() {
-              _messages = formatted;
+              _messages = data;
+              _isLoading = false;
             });
             _scrollToBottom();
           }
@@ -96,10 +104,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       final profileResult = await ApiService.getUserProfile();
       if (profileResult['success'] == true) {
         setState(() {
-          _currentUserId = profileResult['data']['_id']?.toString();
-          _currentUserAvatar = profileResult['data']['avatar']?['url']
-              ?.toString();
-          _currentUserName = profileResult['data']['fullName']?.toString();
+          _currentUserId = profileResult['data']['id']?.toString();
+          _currentUserAvatar = profileResult['data']['avatar_url']?.toString();
+          _currentUserName = profileResult['data']['full_name']?.toString();
         });
         debugPrint('✅ Current user profile loaded');
         debugPrint('   ID: $_currentUserId');
@@ -107,6 +114,31 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       }
     } catch (e) {
       debugPrint('❌ Error loading user profile: $e');
+    }
+  }
+
+  Future<void> _loadChatParticipants() async {
+    try {
+      final res = await ApiService.getChatParticipants(chatId: widget.chatId);
+      if (res['success'] == true) {
+        setState(() {
+          _participantProfiles = res['data'];
+
+          // Resolve otherUserId from profiles (the one who isn't current user)
+          if (_currentUserId != null) {
+            final otherId = _participantProfiles.keys.firstWhere(
+              (id) => id != _currentUserId,
+              orElse: () => '',
+            );
+            if (otherId.isNotEmpty) {
+              _otherUserId = otherId;
+              debugPrint('✅ Resolved otherUserId from cache: $_otherUserId');
+            }
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading chat participants: $e');
     }
   }
 
@@ -134,27 +166,34 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Map<String, dynamic> _convertSupabaseMessage(Map<String, dynamic> message) {
-    final bool isMe = message['sender_id'] == _currentUserId;
+    final String senderId = message['sender_id']?.toString() ?? '';
+    final bool isMe = senderId == _currentUserId;
     final List<dynamic> fileUrls = message['file_urls'] ?? [];
+    final String contentType =
+        message['content_type'] ?? message['type'] ?? 'text';
 
     return {
+      'id': message['id'],
       '_id': message['id'],
       'content': message['content'],
-      'type': message['type'],
+      'type': contentType,
+      'sender_id': senderId,
       'sender': {
-        '_id': message['sender_id'],
+        '_id': senderId,
         'fullName': isMe ? _currentUserName : _actualDoctorName,
         'avatar': {'url': isMe ? _currentUserAvatar : _actualDoctorAvatar},
       },
+      'file_urls': fileUrls,
       'fileUrl': fileUrls
           .map(
             (url) => {
               'url': url,
-              'type': message['type'] == 'image' ? 'image' : 'file',
+              'type': contentType == 'image' ? 'image' : 'file',
             },
           )
           .toList(),
-      'createdAt': message['created_at'],
+      'created_at': message['created_at'],
+      'createdAt': message['created_at'] ?? message['createdAt'],
     };
   }
 
@@ -257,6 +296,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Future<void> _sendMessage() async {
     final content = _controller.text.trim();
+    debugPrint(
+      '📩 [Patient] _sendMessage triggered. Content: "$content", Files: ${_selectedFiles.length}',
+    );
 
     if (content.isEmpty && _selectedFiles.isEmpty) return;
     if (_isSending) return;
@@ -275,8 +317,19 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         _controller.clear();
         setState(() {
           _selectedFiles = [];
+          _isAutoScrollEnabled = true;
         });
         _scrollToBottom();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response['message'] ??
+                  AppLocalizations.of(context)!.failedToSendMessage,
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       debugPrint('❌ Error sending message: $e');
@@ -311,6 +364,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   // ✅ Unified method to initiate Call (Audio or Video)
   void _initiateCall({required bool isVideo}) async {
+    // Attempt rescue if _otherUserId is null but cache is full
+    if (_otherUserId == null &&
+        _participantProfiles.isNotEmpty &&
+        _currentUserId != null) {
+      _otherUserId = _participantProfiles.keys.firstWhere(
+        (id) => id != _currentUserId,
+        orElse: () => '',
+      );
+      if (_otherUserId!.isEmpty) _otherUserId = null;
+    }
+
     if (_otherUserId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -631,9 +695,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     ),
                     itemCount: _messages.length,
                     separatorBuilder: (context, index) {
-                      final currentMsgDate = _messages[index]['createdAt'];
+                      final currentMsgDate =
+                          _messages[index]['created_at'] ??
+                          _messages[index]['createdAt'];
                       final nextMsgDate = (index + 1 < _messages.length)
-                          ? _messages[index + 1]['createdAt']
+                          ? (_messages[index + 1]['created_at'] ??
+                                _messages[index + 1]['createdAt'])
                           : null;
 
                       if (nextMsgDate != null &&
@@ -672,7 +739,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Widget _buildItem(int index) {
     final message = _messages[index];
-    final String msgId = message['_id']?.toString() ?? '';
+    final String msgId = (message['id'] ?? message['_id'])?.toString() ?? '';
 
     if (message['type'] == 'call_log') {
       return CallLogBubble(
@@ -683,21 +750,24 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       );
     }
 
-    final String senderId = message['sender']?['_id']?.toString() ?? '';
+    final String senderId = message['sender_id']?.toString() ?? '';
     final bool isMe = _currentUserId != null && senderId == _currentUserId;
-    final List<dynamic> attachments = message['fileUrl'] ?? [];
+
+    // Look up profile from cache if not joined (joins don't work in Realtime stream)
+    final profile = _participantProfiles[senderId];
+    final List<dynamic> attachments = message['file_urls'] ?? [];
 
     return MessageBubble(
       messageId: msgId,
       content: message['content']?.toString() ?? '',
       isMe: isMe,
-      senderAvatar: message['sender']?['avatar']?['url']?.toString(),
+      senderAvatar: profile?['avatar_url']?.toString(),
       currentUserAvatar: _currentUserAvatar,
       fileUrls: attachments
-          .map((att) => att['url']?.toString() ?? '')
+          .map((att) => att.toString())
           .where((url) => url.isNotEmpty)
           .toList(),
-      formattedTime: _formatTime(message['createdAt']),
+      formattedTime: _formatTime(message['created_at'] ?? message['createdAt']),
       isSelected: _selectedMessageIds.contains(msgId),
       onTap: _isSelectionMode ? () => _toggleSelection(msgId) : null,
       onLongPress: () => _toggleSelection(msgId),
@@ -738,6 +808,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
+    _messagesSubscription?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();

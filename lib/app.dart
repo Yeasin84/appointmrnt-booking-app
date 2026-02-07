@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aroggyapath/screens/patient/navigation/patient_main_navigation.dart';
 import 'package:aroggyapath/screens/doctor/navigation/doctor_main_navigation.dart';
+import 'package:aroggyapath/screens/doctor/posts/doctor_create_post_screen.dart';
+import 'package:aroggyapath/screens/doctor/reels/doctor_reels_screen.dart';
 import 'package:aroggyapath/screens/splash/splash_screen.dart';
 import 'package:aroggyapath/services/api_service.dart';
 import 'package:aroggyapath/services/notification_poller.dart';
@@ -152,6 +154,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         '/add-dependent': (context) => const AddDependentScreen(),
         '/edit-dependent': (context) => const EditDependentScreen(),
         '/notifications': (context) => const NotificationScreen(),
+        '/doctor/create-post': (context) => const DoctorCreatePostScreen(),
+        '/doctor/reels': (context) => const DoctorReelsScreen(),
         // Add more routes as needed
       },
 

@@ -299,7 +299,9 @@ class _IncomingCallDialogState extends State<IncomingCallDialog> {
 
   void _setupCallEndListener() {
     SocketService.instance.on('call:end', (data) {
-      final endChatId = data is Map ? data['chatId']?.toString() : null;
+      // Broadcast payload is nested: {event: '...', payload: {...}}
+      final payload = data is Map ? (data['payload'] ?? data) : data;
+      final endChatId = payload is Map ? payload['chatId']?.toString() : null;
       if (endChatId == widget.chatId && mounted && !_isProcessing) {
         debugPrint('📞 Call ended by caller');
         Navigator.of(context).pop();
