@@ -18,7 +18,7 @@ class MarkerFactory {
       height: 40,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.2),
+          color: Colors.blue.withValues(alpha: 0.2),
           shape: BoxShape.circle,
         ),
         child: const Center(

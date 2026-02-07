@@ -69,22 +69,36 @@ class UserService {
       if (address != null) updateData['address'] = address;
       if (country != null) updateData['country'] = country;
       if (language != null) updateData['language'] = language;
-      if (experienceYears != null)
+      if (experienceYears != null) {
         updateData['experience_years'] = experienceYears;
+      }
 
       // Doctor fields
       if (specialty != null) updateData['specialty'] = specialty;
       if (specialties != null) updateData['specialties'] = specialties;
       if (degrees != null) updateData['degrees'] = degrees;
-      if (fees != null) updateData['fees'] = fees;
-      if (weeklySchedule != null)
-        updateData['weekly_schedule'] = weeklySchedule;
-      if (visitingHoursText != null)
+
+      // ✅ Map fees object to separate columns for Supabase
+      if (fees != null) {
+        updateData['fees_amount'] = fees['amount'];
+        updateData['fees_currency'] = fees['currency'] ?? 'DZD';
+      }
+
+      // ❌ REMOVED: weekly_schedule is now a separate table
+      // if (weeklySchedule != null)
+      //   updateData['weekly_schedule'] = weeklySchedule;
+
+      if (visitingHoursText != null) {
         updateData['visiting_hours_text'] = visitingHoursText;
-      if (medicalLicenseNumber != null)
+      }
+      if (medicalLicenseNumber != null) {
         updateData['medical_license_number'] = medicalLicenseNumber;
-      if (isVideoCallAvailable != null)
-        updateData['is_video_call_available'] = isVideoCallAvailable;
+      }
+
+      // ✅ Map to correct column name 'is_video_available'
+      if (isVideoCallAvailable != null) {
+        updateData['is_video_available'] = isVideoCallAvailable;
+      }
 
       // Location: Handle separately to prevent crash if columns missing
       Map<String, dynamic>? locationData;
@@ -97,7 +111,13 @@ class UserService {
       // 3. Call Supabase Update (Core Fields)
       final response = await ApiService.updateUserProfile(data: updateData);
 
-      // 4. Try updating location separately (Graceful Degradation)
+      // 4. Update Schedule in separate table (if provided)
+      if (response['success'] == true && weeklySchedule != null) {
+        debugPrint('📅 Upserting schedule to separate table...');
+        await ApiService.upsertDoctorSchedule(weeklySchedule: weeklySchedule);
+      }
+
+      // 5. Try updating location separately (Graceful Degradation)
       if (response['success'] == true && locationData != null) {
         try {
           debugPrint('📍 Attempting to update location...');

@@ -1,28 +1,16 @@
 import 'package:flutter/material.dart';
-
-import '../utils/api_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/doctor_model.dart';
 import 'api_service.dart';
 
 class AppointmentService {
+  static final supabase = Supabase.instance.client;
+
   /// Get current user's appointments (patient or doctor)
   Future<Map<String, dynamic>> getMyAppointments() async {
     try {
-      debugPrint('📤 Fetching my appointments...');
-
-      final response = await ApiService.get(
-        ApiConfig.appointments,
-        requiresAuth: true,
-      );
-
-      if (response['success'] == true) {
-        debugPrint(
-          '✅ Appointments fetched: ${response['data']?.length ?? 0} items',
-        );
-      } else {
-        debugPrint('❌ Failed to fetch appointments: ${response['message']}');
-      }
-
-      return response;
+      debugPrint('📤 Fetching my appointments (Supabase)...');
+      return await ApiService.getAppointments();
     } catch (e) {
       debugPrint('❌ Get My Appointments Error: $e');
       return {'success': false, 'message': 'Failed to fetch appointments: $e'};
@@ -32,11 +20,14 @@ class AppointmentService {
   /// Get single appointment by ID
   Future<Map<String, dynamic>> getAppointmentById(String id) async {
     try {
-      final response = await ApiService.get(
-        '${ApiConfig.appointments}/$id',
-        requiresAuth: true,
-      );
-      return response;
+      final data = await supabase
+          .from('appointments')
+          .select(
+            '*, doctors:profiles!doctor_id(*), patients:profiles!patient_id(*)',
+          )
+          .eq('id', id)
+          .single();
+      return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Get Appointment Error: $e');
       return {'success': false, 'message': 'Failed to fetch appointment: $e'};
@@ -50,31 +41,29 @@ class AppointmentService {
     required String appointmentTime, // "10:30"
     String? symptoms,
     String? appointmentType, // "physical" or "video"
+    Map<String, dynamic>? bookedFor,
+    List<String>? medicalDocuments,
+    String? paymentScreenshot,
   }) async {
     try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return {'success': false, 'message': 'Not logged in'};
+
       final body = {
-        'doctorId': doctorId,
-        'appointmentType': appointmentType ?? 'physical',
-        'date': appointmentDate,
+        'doctor_id': doctorId,
+        'patient_id': userId,
+        'appointment_date': appointmentDate,
         'time': appointmentTime,
+        'appointment_type': appointmentType ?? 'physical',
+        'status': 'pending',
         if (symptoms != null && symptoms.isNotEmpty) 'symptoms': symptoms,
+        'booked_for': ?bookedFor,
+        'medical_documents': ?medicalDocuments,
+        'payment_screenshot': ?paymentScreenshot,
       };
 
-      debugPrint('📤 Creating appointment with body: $body');
-
-      final response = await ApiService.post(
-        ApiConfig.appointments,
-        body,
-        requiresAuth: true,
-      );
-
-      if (response['success'] == true) {
-        debugPrint('✅ Appointment created successfully');
-      } else {
-        debugPrint('❌ Failed to create appointment: ${response['message']}');
-      }
-
-      return response;
+      debugPrint('📤 Creating appointment (Supabase) with body: $body');
+      return await ApiService.createAppointment(appointmentData: body);
     } catch (e) {
       debugPrint('❌ Create Appointment Error: $e');
       return {'success': false, 'message': 'Failed to create appointment: $e'};
@@ -85,28 +74,13 @@ class AppointmentService {
   Future<Map<String, dynamic>> updateAppointmentStatus({
     required String appointmentId,
     required String status, // "accepted" | "cancelled" | "completed"
-    String? patient,
-    double? price,
   }) async {
     try {
-      final body = {'status': status, 'patient': ?patient, 'price': ?price};
-
-      debugPrint('📤 Updating appointment status to: $status');
-      debugPrint('📦 Body: $body');
-
-      final response = await ApiService.patch(
-        '${ApiConfig.appointments}/$appointmentId/status',
-        body,
-        requiresAuth: true,
+      debugPrint('📤 Updating appointment status to: $status (Supabase)');
+      return await ApiService.updateAppointmentStatus(
+        appointmentId: appointmentId,
+        status: status,
       );
-
-      if (response['success'] == true) {
-        debugPrint('✅ Status updated successfully');
-      } else {
-        debugPrint('❌ Failed to update status: ${response['message']}');
-      }
-
-      return response;
     } catch (e) {
       debugPrint('❌ Update Status Error: $e');
       return {'success': false, 'message': 'Failed to update status: $e'};
@@ -116,11 +90,19 @@ class AppointmentService {
   /// Get upcoming appointments
   Future<Map<String, dynamic>> getUpcomingAppointments() async {
     try {
-      final response = await ApiService.get(
-        '${ApiConfig.appointments}?status=pending,accepted',
-        requiresAuth: true,
-      );
-      return response;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return {'success': false, 'message': 'Not logged in'};
+
+      final data = await supabase
+          .from('appointments')
+          .select(
+            '*, doctors:profiles!doctor_id(*), patients:profiles!patient_id(*)',
+          )
+          .or('patient_id.eq.$userId,doctor_id.eq.$userId')
+          .or('status.eq.pending,status.eq.accepted')
+          .order('appointment_date', ascending: true);
+
+      return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Get Upcoming Appointments Error: $e');
       return {
@@ -133,11 +115,19 @@ class AppointmentService {
   /// Get past appointments
   Future<Map<String, dynamic>> getPastAppointments() async {
     try {
-      final response = await ApiService.get(
-        '${ApiConfig.appointments}?status=completed,cancelled',
-        requiresAuth: true,
-      );
-      return response;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return {'success': false, 'message': 'Not logged in'};
+
+      final data = await supabase
+          .from('appointments')
+          .select(
+            '*, doctors:profiles!doctor_id(*), patients:profiles!patient_id(*)',
+          )
+          .or('patient_id.eq.$userId,doctor_id.eq.$userId')
+          .or('status.eq.completed,status.eq.cancelled')
+          .order('appointment_date', ascending: false);
+
+      return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Get Past Appointments Error: $e');
       return {
@@ -150,37 +140,18 @@ class AppointmentService {
   /// Complete appointment (for doctor)
   Future<Map<String, dynamic>> completeAppointment({
     required String appointmentId,
-    required String patientName,
-    required double price,
-    String? prescription,
     String? notes,
   }) async {
     try {
+      debugPrint('📤 Completing appointment $appointmentId (Supabase)');
       final body = {
         'status': 'completed',
-        'patient': patientName,
-        'price': price,
-        if (prescription != null && prescription.isNotEmpty)
-          'prescription': prescription,
         if (notes != null && notes.isNotEmpty) 'notes': notes,
       };
 
-      debugPrint('📤 Completing appointment $appointmentId');
-      debugPrint('📦 Body: $body');
+      await supabase.from('appointments').update(body).eq('id', appointmentId);
 
-      final response = await ApiService.patch(
-        '${ApiConfig.appointments}/$appointmentId/status',
-        body,
-        requiresAuth: true,
-      );
-
-      if (response['success'] == true) {
-        debugPrint('✅ Appointment completed successfully');
-      } else {
-        debugPrint('❌ Failed to complete appointment: ${response['message']}');
-      }
-
-      return response;
+      return {'success': true};
     } catch (e) {
       debugPrint('❌ Complete Appointment Error: $e');
       return {
@@ -192,80 +163,97 @@ class AppointmentService {
 
   /// Accept appointment (for doctor)
   Future<Map<String, dynamic>> acceptAppointment(String appointmentId) async {
-    try {
-      debugPrint('📤 Accepting appointment: $appointmentId');
-
-      final response = await ApiService.patch(
-        '${ApiConfig.appointments}/$appointmentId/status',
-        {'status': 'accepted'},
-        requiresAuth: true,
-      );
-
-      if (response['success'] == true) {
-        debugPrint('✅ Appointment accepted successfully');
-      } else {
-        debugPrint('❌ Failed to accept appointment: ${response['message']}');
-      }
-
-      return response;
-    } catch (e) {
-      debugPrint('❌ Accept Appointment Error: $e');
-      return {'success': false, 'message': 'Failed to accept appointment: $e'};
-    }
+    return await updateAppointmentStatus(
+      appointmentId: appointmentId,
+      status: 'accepted',
+    );
   }
 
   /// Cancel appointment (for doctor/admin)
   Future<Map<String, dynamic>> cancelAppointment(String appointmentId) async {
-    try {
-      debugPrint('📤 Cancelling appointment: $appointmentId');
-
-      final response = await ApiService.patch(
-        '${ApiConfig.appointments}/$appointmentId/status',
-        {'status': 'cancelled'},
-        requiresAuth: true,
-      );
-
-      if (response['success'] == true) {
-        debugPrint('✅ Appointment cancelled successfully');
-      } else {
-        debugPrint('❌ Failed to cancel appointment: ${response['message']}');
-      }
-
-      return response;
-    } catch (e) {
-      debugPrint('❌ Cancel Appointment Error: $e');
-      return {'success': false, 'message': 'Failed to cancel appointment: $e'};
-    }
+    return await ApiService.cancelAppointment(appointmentId: appointmentId);
   }
 
-  /// Get available appointment slots
+  /// Get available appointment slots (Locally calculated)
   Future<Map<String, dynamic>> getAvailableSlots({
     required String doctorId,
     required String date,
   }) async {
     try {
-      debugPrint('📤 Fetching available slots for doctor: $doctorId on $date');
-
-      final response = await ApiService.post(
-        '${ApiConfig.appointments}/available',
-        {'doctorId': doctorId, 'date': date},
-        requiresAuth: true,
+      debugPrint(
+        '📤 Calculating available slots for doctor: $doctorId on $date',
       );
 
-      if (response['success'] == true) {
-        final slots = response['data']?['slots'] ?? [];
-        debugPrint('✅ Found ${slots.length} available slots');
-      } else {
-        debugPrint('❌ Failed to fetch slots: ${response['message']}');
+      // 1. Fetch Doctor's Schedule
+      final doctorRes = await ApiService.getDoctorDetails(doctorId: doctorId);
+      if (doctorRes['success'] != true) throw Exception('Doctor not found');
+
+      final doctor = Doctor.fromJson(doctorRes['data']);
+      if (doctor.weeklySchedule == null) {
+        return {
+          'success': true,
+          'data': {'slots': []},
+        };
       }
 
-      return response;
+      // 2. Identify day of week
+      final dayName = _getDayName(DateTime.parse(date));
+      final daySchedule = doctor.weeklySchedule!.firstWhere(
+        (s) => s.day.toLowerCase() == dayName.toLowerCase(),
+        orElse: () => WeeklySchedule(day: dayName, isActive: false, slots: []),
+      );
+
+      if (!daySchedule.isActive) {
+        return {
+          'success': true,
+          'data': {'slots': []},
+        };
+      }
+
+      // 3. Fetch existing appointments for that doctor on that date
+      final appointmentsRes = await supabase
+          .from('appointments')
+          .select('time')
+          .eq('doctor_id', doctorId)
+          .eq('appointment_date', date)
+          .neq('status', 'cancelled');
+
+      final List bookedTimes = (appointmentsRes as List)
+          .map((a) => a['time'])
+          .toList();
+
+      // 4. Map slots and mark isBooked
+      final availableSlots = daySchedule.slots.map((slot) {
+        return {
+          'start': slot.start,
+          'end': slot.end,
+          'isBooked': bookedTimes.contains(slot.start),
+        };
+      }).toList();
+
+      return {
+        'success': true,
+        'data': {'slots': availableSlots},
+      };
     } catch (e) {
       debugPrint('❌ Get Available Slots Error: $e');
       return {
         'success': false,
-        'message': 'Failed to fetch available slots: $e',
+        'message': 'Failed to calculate available slots: $e',
       };
     }
+  }
+
+  String _getDayName(DateTime date) {
+    const dayNames = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday',
+    ];
+    return dayNames[date.weekday - 1];
   }
 }

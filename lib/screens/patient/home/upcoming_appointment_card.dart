@@ -1,7 +1,8 @@
 import 'package:aroggyapath/models/appointment_model.dart';
 import 'package:aroggyapath/screens/patient/appointments/appointment_detail_screen.dart';
 import 'package:flutter/material.dart';
-import '../../../widgets/custom_image.dart';
+import 'package:aroggyapath/widgets/custom_image.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class UpcomingAppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
@@ -10,6 +11,8 @@ class UpcomingAppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -21,58 +24,96 @@ class UpcomingAppointmentCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: AppColors.primary.withValues(alpha: 0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Row(
           children: [
-            // ✅ Safe Image Loading
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _buildDoctorImage(),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.primarySoft, width: 2),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: _buildDoctorImage(),
+              ),
             ),
-            const SizedBox(width: 15),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     appointment.doctorName ?? 'Doctor',
-                    style: const TextStyle(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      color: AppColors.textPrimary,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    appointment.specialty ?? '',
-                    style: const TextStyle(color: Colors.grey),
+                    appointment.specialty ?? 'Specialist',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${appointment.formattedDate} at ${appointment.appointmentTime}',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySoft,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.access_time_rounded,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${appointment.formattedDate} • ${appointment.appointmentTime}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.grey),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textPlaceholder,
+              size: 28,
+            ),
           ],
         ),
       ),
     );
   }
 
-  // ✅ Safe image builder
   Widget _buildDoctorImage() {
     return CustomImage(
       imageUrl: appointment.doctorImage,
-      width: 80,
-      height: 80,
+      width: 76,
+      height: 76,
       fit: BoxFit.cover,
       placeholderAsset: 'assets/images/doctor_booking.png',
     );

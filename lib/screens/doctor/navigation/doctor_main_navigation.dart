@@ -7,8 +7,8 @@ import 'package:aroggyapath/screens/doctor/reels/doctor_reels_screen.dart';
 import 'package:aroggyapath/screens/doctor/profile/doctor_profile_screen.dart';
 import 'package:aroggyapath/screens/doctor/messages/doctor_messages_list_screen.dart';
 import 'package:aroggyapath/services/call_manager_service.dart';
-
 import 'package:aroggyapath/l10n/app_localizations.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class DoctorMainNavigation extends ConsumerStatefulWidget {
   const DoctorMainNavigation({super.key});
@@ -24,7 +24,6 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
   @override
   void initState() {
     super.initState();
-    // ✅ Initialize CallManager when dashboard loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('👨‍⚕️ Doctor Dashboard Loaded - Initializing CallManager');
       CallManager.instance.initialize(context);
@@ -39,7 +38,6 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
     DoctorProfileScreen(),
   ];
 
-  // ✅ Public method to navigate to specific tab
   void navigateToTab(int index) {
     if (index >= 0 && index < _screens.length) {
       setState(() {
@@ -55,91 +53,78 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.only(top: 10, bottom: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 15,
+              color: AppColors.primary.withValues(alpha: 0.08),
+              blurRadius: 20,
               offset: const Offset(0, -5),
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
             setState(() {
               _currentIndex = index;
             });
           },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          elevation: 10,
-          selectedItemColor: const Color(0xFF1664CD),
-          unselectedItemColor: const Color(0xFF4B5563),
-          selectedLabelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-          items: [
-            BottomNavigationBarItem(
-              icon: const Padding(
-                padding: EdgeInsets.only(bottom: 5),
-                child: Icon(Icons.home_outlined, size: 28),
+          backgroundColor: AppColors.surface,
+          indicatorColor: AppColors.primarySoft,
+          elevation: 0,
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(
+                Icons.home_outlined,
+                color: AppColors.textSecondary,
               ),
-              activeIcon: const Padding(
-                padding: EdgeInsets.only(bottom: 5),
-                child: Icon(Icons.home, size: 28),
-              ),
+              selectedIcon: const Icon(Icons.home, color: AppColors.primary),
               label: l10n.navHome,
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: _buildBadgeIcon(
                 Icons.calendar_today_outlined,
                 appointmentUnreadCountProvider,
+                isSelected: false,
               ),
-              activeIcon: _buildBadgeIcon(
+              selectedIcon: _buildBadgeIcon(
                 Icons.calendar_today,
                 appointmentUnreadCountProvider,
+                isSelected: true,
               ),
               label: l10n.navAppointments,
             ),
-            BottomNavigationBarItem(
-              icon: const Padding(
-                padding: EdgeInsets.only(bottom: 5),
-                child: Icon(Icons.video_library_outlined, size: 26),
+            NavigationDestination(
+              icon: const Icon(
+                Icons.video_library_outlined,
+                color: AppColors.textSecondary,
               ),
-              activeIcon: const Padding(
-                padding: EdgeInsets.only(bottom: 5),
-                child: Icon(Icons.video_library, size: 26),
+              selectedIcon: const Icon(
+                Icons.video_library,
+                color: AppColors.primary,
               ),
               label: l10n.navReels,
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: _buildBadgeIcon(
                 Icons.mail_outline,
                 messageUnreadCountProvider,
+                isSelected: false,
               ),
-              activeIcon: _buildBadgeIcon(
+              selectedIcon: _buildBadgeIcon(
                 Icons.mail,
                 messageUnreadCountProvider,
+                isSelected: true,
               ),
               label: l10n.navMessages,
             ),
-            BottomNavigationBarItem(
-              icon: const Padding(
-                padding: EdgeInsets.only(bottom: 5),
-                child: Icon(Icons.person_outline, size: 28),
+            NavigationDestination(
+              icon: const Icon(
+                Icons.person_outline,
+                color: AppColors.textSecondary,
               ),
-              activeIcon: const Padding(
-                padding: EdgeInsets.only(bottom: 5),
-                child: Icon(Icons.person, size: 28),
-              ),
+              selectedIcon: const Icon(Icons.person, color: AppColors.primary),
               label: l10n.navProfile,
             ),
           ],
@@ -148,14 +133,19 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
     );
   }
 
-  Widget _buildBadgeIcon(IconData iconData, dynamic provider) {
+  Widget _buildBadgeIcon(
+    IconData iconData,
+    dynamic provider, {
+    required bool isSelected,
+  }) {
     final unreadCount = ref.watch(provider);
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 5),
-          child: Icon(iconData, size: 26),
+        Icon(
+          iconData,
+          size: 26,
+          color: isSelected ? AppColors.primary : AppColors.textSecondary,
         ),
         if (unreadCount > 0)
           Positioned(
@@ -165,9 +155,9 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: const Color(0xFF1664CD), // Blue dot
+                color: AppColors.primary,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
+                border: Border.all(color: Colors.white, width: 2),
               ),
             ),
           ),

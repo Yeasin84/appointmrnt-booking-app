@@ -148,6 +148,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       );
 
       if (image != null) {
+        if (!mounted) return;
         setState(() {
           _selectedImage = File(image.path);
         });
@@ -155,6 +156,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       }
     } catch (e) {
       debugPrint('❌ Error picking image: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.errorMsg(e))),
       );
@@ -191,6 +193,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             _selectedImage, // ✅ Pass File directly, provider will convert
       );
 
+      if (!mounted) return;
+
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -219,13 +223,17 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       }
     } catch (e) {
       debugPrint('❌ Update error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.errorMsg(e))),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorMsg(e))),
+        );
+      }
     } finally {
-      setState(() {
-        _isUpdating = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
     }
   }
 
@@ -413,7 +421,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           ),
           if (enabled && suffixIcon == null)
             const Icon(Icons.edit, size: 20, color: Colors.grey),
-          if (suffixIcon != null) suffixIcon,
+          ?suffixIcon,
         ],
       ),
     );

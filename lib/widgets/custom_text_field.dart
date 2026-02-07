@@ -28,20 +28,23 @@ class CustomTextField extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: TextFormField( // TextField এর বদলে TextFormField ব্যবহার করা হয়েছে
+      child: TextFormField(
+        // TextField এর বদলে TextFormField ব্যবহার করা হয়েছে
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
         validator: validator,
         enabled: true, // নিশ্চিত করা হয়েছে যেন ফিল্ডটি ইনেবল থাকে
-        style: const TextStyle(color: Colors.black), // টেক্সট কালার স্পষ্ট করা হয়েছে
+        style: const TextStyle(
+          color: Colors.black,
+        ), // টেক্সট কালার স্পষ্ট করা হয়েছে
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey[400]),
@@ -61,7 +64,10 @@ class CustomTextField extends StatelessWidget {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
         ),
       ),
     );

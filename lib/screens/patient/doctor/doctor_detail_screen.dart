@@ -16,7 +16,6 @@ class DoctorDetailsScreen extends StatefulWidget {
 
 class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
   List<dynamic> _reviews = [];
-  bool _loadingReviews = false;
   double _avgRating = 0.0;
   int _totalReviews = 0;
 
@@ -28,36 +27,32 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
 
   /// ✅ Load doctor reviews from backend
   Future<void> _loadDoctorReviews() async {
-    setState(() => _loadingReviews = true);
-
     try {
-      print('📥 Loading reviews for doctor: ${widget.doctor.id}');
+      debugPrint('📥 Loading reviews for doctor: ${widget.doctor.id}');
 
       final response = await ApiService.get(
         '/api/v1/doctor-review/doctor/${widget.doctor.id}', // ✅ Fixed: removed 's'
         requiresAuth: false,
       );
 
-      print('📥 Reviews API Response: $response');
+      debugPrint('📥 Reviews API Response: $response');
 
       if (response['success'] == true && response['data'] != null) {
         final data = response['data'];
 
+        if (!mounted) return;
         setState(() {
           _reviews = data['items'] ?? [];
           _avgRating = (data['summary']?['avgRating'] ?? 0.0).toDouble();
           _totalReviews = data['summary']?['totalReviews'] ?? 0;
-          _loadingReviews = false;
         });
 
         debugPrint('✅ Loaded ${_reviews.length} reviews, avg: $_avgRating');
       } else {
         debugPrint('❌ Reviews fetch failed: ${response['message']}');
-        setState(() => _loadingReviews = false);
       }
     } catch (e) {
       debugPrint('❌ Error loading reviews: $e');
-      setState(() => _loadingReviews = false);
     }
   }
 
@@ -439,6 +434,7 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
 
       final result = await ApiService.createOrGetChat(userId: doctorId);
 
+      if (!context.mounted) return;
       Navigator.pop(context);
 
       debugPrint('📥 Chat result: $result');
@@ -499,7 +495,7 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
         );
       }
     } catch (e) {
-      Navigator.pop(context);
+      if (context.mounted) Navigator.pop(context);
       debugPrint('❌ Error opening chat: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

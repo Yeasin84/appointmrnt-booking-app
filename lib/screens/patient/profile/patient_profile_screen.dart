@@ -257,37 +257,19 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                                       ),
                                       ListTile(
                                         leading: const Text(
-                                          'ع',
+                                          'অ',
                                           style: TextStyle(
                                             fontSize: 24,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        title: Text(l10n.arabic),
+                                        title: Text(l10n.bangla),
                                         selected:
-                                            currentLocale.languageCode == 'ar',
+                                            currentLocale.languageCode == 'bn',
                                         onTap: () {
                                           ref
                                               .read(localeProvider.notifier)
-                                              .setLocale(const Locale('ar'));
-                                          Navigator.pop(context);
-                                        },
-                                      ),
-                                      ListTile(
-                                        leading: const Text(
-                                          'Fr',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        title: Text(l10n.french),
-                                        selected:
-                                            currentLocale.languageCode == 'fr',
-                                        onTap: () {
-                                          ref
-                                              .read(localeProvider.notifier)
-                                              .setLocale(const Locale('fr'));
+                                              .setLocale(const Locale('bn'));
                                           Navigator.pop(context);
                                         },
                                       ),
@@ -302,9 +284,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                               Text(
                                 currentLocale.languageCode == 'en'
                                     ? l10n.english
-                                    : currentLocale.languageCode == 'ar'
-                                    ? l10n.arabic
-                                    : l10n.french, // Display current language
+                                    : l10n.bangla, // Display current language
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: Color(0xFF0B3267),

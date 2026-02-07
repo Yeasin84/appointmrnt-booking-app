@@ -77,7 +77,7 @@ class _SelectProfileScreenState extends State<SelectProfileScreen> {
                 ],
               ),
               const Spacer(),
-              
+
               CustomButton(
                 text: 'Continue',
                 onPressed: selectedProfile != null
@@ -85,7 +85,8 @@ class _SelectProfileScreenState extends State<SelectProfileScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => SignInScreen(userType: selectedProfile!),
+                            builder: (context) =>
+                                SignInScreen(userType: selectedProfile!),
                           ),
                         );
                       }
@@ -113,7 +114,9 @@ class _SelectProfileScreenState extends State<SelectProfileScreen> {
         width: MediaQuery.of(context).size.width * 0.42,
         height: 200,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1664CD).withOpacity(0.05) : Colors.white,
+          color: isSelected
+              ? const Color(0xFF1664CD).withValues(alpha: 0.05)
+              : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? const Color(0xFF1664CD) : Colors.grey[300]!,
@@ -127,8 +130,11 @@ class _SelectProfileScreenState extends State<SelectProfileScreen> {
               imagePath,
               height: 90,
               width: 90,
-              errorBuilder: (context, error, stackTrace) => 
-                  const Icon(Icons.account_circle, size: 80, color: Colors.grey),
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.account_circle,
+                size: 80,
+                color: Colors.grey,
+              ),
             ),
             const SizedBox(height: 15),
             Text(
@@ -136,7 +142,9 @@ class _SelectProfileScreenState extends State<SelectProfileScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isSelected ? const Color(0xFF1664CD) : const Color(0xFF0B3267),
+                color: isSelected
+                    ? const Color(0xFF1664CD)
+                    : const Color(0xFF0B3267),
               ),
             ),
           ],

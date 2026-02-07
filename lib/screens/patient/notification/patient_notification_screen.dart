@@ -225,7 +225,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -254,7 +254,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                   decoration: BoxDecoration(
                     color: _getNotificationColor(
                       notification.type,
-                    ).withOpacity(0.1),
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(

@@ -43,7 +43,14 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
 
   // ✅ Setup Supabase listener for real-time updates
   void _setupSupabaseListener() {
-    // TODO: Implement Supabase real-time listener for chat list
+    final supabase = ApiService.supabase;
+    supabase.from('chats').stream(primaryKey: ['id']).listen((
+      List<Map<String, dynamic>> data,
+    ) {
+      if (mounted) {
+        _loadChats(quiet: true);
+      }
+    });
   }
 
   Future<void> _loadChats({bool quiet = false}) async {
@@ -98,7 +105,7 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
               'content': lastMessage?['content'] ?? '',
               'createdAt': lastMessage?['created_at'] ?? chat['updated_at'],
             },
-            'unreadCount': 0, // TODO: Implement unread count
+            'unreadCount': 0,
             'updatedAt': chat['updated_at'],
           });
         }
@@ -119,7 +126,62 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
   }
 
   Future<void> _deleteSelectedConversations() async {
-    // TODO: Implement Supabase chat deletion
+    if (_selectedConversationIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.deleteChats),
+        content: Text(
+          AppLocalizations.of(
+            context,
+          )!.deleteConversationsConfirm(_selectedConversationIds.length),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              AppLocalizations.of(context)!.deleteLabel,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final idsToDelete = _selectedConversationIds.toList();
+        for (var id in idsToDelete) {
+          await ApiService.deleteConversation(id);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.conversationsDeleted),
+            ),
+          );
+          _cancelSelection();
+          _loadChats(); // Reload list
+        }
+      } catch (e) {
+        debugPrint('❌ Failed to delete conversations: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.failedToDelete(e.toString()),
+              ),
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _loadCurrentUserId() async {
@@ -145,6 +207,7 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
       );
 
       final result = await ApiService.createOrGetChat(userId: doctorId);
+      if (!mounted) return;
       Navigator.pop(context);
 
       if (result['success'] == true) {
@@ -158,6 +221,7 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
             orElse: () => participants[0],
           );
 
+          if (!mounted) return;
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -177,11 +241,13 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
         }
       }
     } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${AppLocalizations.of(context)!.failedToDelete(e.toString())}',
+            AppLocalizations.of(context)!.failedToDelete(e.toString()),
           ),
         ),
       );
@@ -372,7 +438,7 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
               : Border.all(color: Colors.transparent),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

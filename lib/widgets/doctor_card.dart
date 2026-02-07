@@ -6,23 +6,21 @@ class DoctorCard extends StatelessWidget {
   final Doctor doctor;
   final VoidCallback? onTap;
 
-  const DoctorCard({
-    super.key,
-    required this.doctor,
-    this.onTap,
-  });
+  const DoctorCard({super.key, required this.doctor, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap ?? () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DoctorDetailsScreen(doctor: doctor),
-          ),
-        );
-      },
+      onTap:
+          onTap ??
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DoctorDetailsScreen(doctor: doctor),
+              ),
+            );
+          },
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.all(15),
@@ -31,7 +29,7 @@ class DoctorCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 5,
               offset: const Offset(0, 2),
@@ -53,7 +51,7 @@ class DoctorCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 15),
-            
+
             // Text Details Section
             Expanded(
               child: Column(
@@ -70,20 +68,21 @@ class DoctorCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     doctor.specialty,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                      const Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 4),
-                     const Text(
-  'Nearby',
-  style: TextStyle(fontSize: 12, color: Colors.grey),
-),
+                      const Text(
+                        'Nearby',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ],
@@ -101,7 +100,10 @@ class DoctorCard extends StatelessWidget {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF0B3267), Color(0xFF1664CD)],

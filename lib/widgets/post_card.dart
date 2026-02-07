@@ -47,15 +47,16 @@ class _PostCardState extends State<PostCard> {
   void _initializeVideo() {
     final videoMedia = _currentPost.media.where((m) => m.isVideo).firstOrNull;
     if (videoMedia != null) {
-      _videoController = VideoPlayerController.network(videoMedia.url)
-        ..setVolume(0)
-        ..initialize().then((_) {
-          if (mounted) {
-            setState(() {
-              _isVideoInitialized = true;
+      _videoController =
+          VideoPlayerController.networkUrl(Uri.parse(videoMedia.url))
+            ..setVolume(0)
+            ..initialize().then((_) {
+              if (mounted) {
+                setState(() {
+                  _isVideoInitialized = true;
+                });
+              }
             });
-          }
-        });
     }
   }
 
@@ -99,7 +100,7 @@ class _PostCardState extends State<PostCard> {
         }
       }
     } catch (e) {
-      print('❌ Error toggling like: $e');
+      debugPrint('❌ Error toggling like: $e');
     } finally {
       setState(() {
         _isLiking = false;
@@ -214,7 +215,7 @@ class _PostCardState extends State<PostCard> {
         }
       }
     } catch (e) {
-      print('❌ Error deleting post: $e');
+      debugPrint('❌ Error deleting post: $e');
     }
   }
 
@@ -328,7 +329,7 @@ class _PostCardState extends State<PostCard> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -523,7 +524,7 @@ class _PostCardState extends State<PostCard> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: const CircularProgressIndicator(
@@ -562,7 +563,7 @@ class _PostCardState extends State<PostCard> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -585,7 +586,7 @@ class _PostCardState extends State<PostCard> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -744,7 +745,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
         });
       }
     } catch (e) {
-      print('❌ Error loading comments: $e');
+      debugPrint('❌ Error loading comments: $e');
       setState(() {
         _isLoading = false;
       });
@@ -771,7 +772,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
         await _loadComments();
       }
     } catch (e) {
-      print('❌ Error submitting comment: $e');
+      debugPrint('❌ Error submitting comment: $e');
     } finally {
       setState(() {
         _isSubmitting = false;

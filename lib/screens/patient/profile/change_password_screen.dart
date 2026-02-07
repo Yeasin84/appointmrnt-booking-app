@@ -48,6 +48,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       }, requiresAuth: true);
 
       if (response['success'] == true) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -66,6 +67,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.pop(context);
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -77,13 +79,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     } finally {
-      setState(() {
-        _isChanging = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isChanging = false;
+        });
+      }
     }
   }
 

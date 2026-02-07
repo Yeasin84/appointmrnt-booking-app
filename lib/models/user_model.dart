@@ -121,13 +121,22 @@ class UserModel {
           ? (json['degrees'] as List).map((d) => Degree.fromJson(d)).toList()
           : null,
 
-      // ✅ Weekly schedule
+      // ✅ Weekly schedule (Supabase Join Support)
       weeklySchedule: json['weeklySchedule'] != null
           ? (json['weeklySchedule'] as List)
                 .map((d) => DaySchedule.fromJson(d))
                 .toList()
-          : json['weekly_schedule'] !=
-                null // fallback snake_case
+          : (json['doctor_schedules'] != null)
+          ? (() {
+              final ds = json['doctor_schedules'];
+              final List? scheduleList = (ds is List && ds.isNotEmpty)
+                  ? ds[0]['weekly_schedule']
+                  : (ds is Map)
+                  ? ds['weekly_schedule']
+                  : null;
+              return scheduleList?.map((d) => DaySchedule.fromJson(d)).toList();
+            })()
+          : json['weekly_schedule'] != null
           ? (json['weekly_schedule'] as List)
                 .map((d) => DaySchedule.fromJson(d))
                 .toList()

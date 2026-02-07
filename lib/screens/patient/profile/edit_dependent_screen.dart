@@ -223,7 +223,7 @@ class _EditDependentScreenState extends State<EditDependentScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -436,7 +436,7 @@ class _EditDependentScreenState extends State<EditDependentScreen> {
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 5,
                         ),
                       ]
@@ -477,7 +477,7 @@ class _EditDependentScreenState extends State<EditDependentScreen> {
                 boxShadow: _isActive
                     ? [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 5,
                         ),
                       ]
@@ -510,7 +510,7 @@ class _EditDependentScreenState extends State<EditDependentScreen> {
                 boxShadow: !_isActive
                     ? [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 5,
                         ),
                       ]
@@ -542,7 +542,7 @@ class _EditDependentScreenState extends State<EditDependentScreen> {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1664CD).withOpacity(0.3),
+                color: const Color(0xFF1664CD).withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -580,7 +580,7 @@ class _EditDependentScreenState extends State<EditDependentScreen> {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF512F).withOpacity(0.3),
+                color: const Color(0xFFFF512F).withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),

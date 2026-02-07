@@ -1,6 +1,8 @@
 // models/doctor_model.dart
 // ✅ COMPLETE & FIXED - Location + Video Call + All Fields
 
+import 'package:flutter/material.dart';
+
 class Doctor {
   final String id;
   final String name;
@@ -49,9 +51,9 @@ class Doctor {
   });
 
   factory Doctor.fromJson(Map<String, dynamic> json) {
-    // ✅ Safely extract image URL from avatar object
+    // ✅ Safely extract image URL from avatar object OR snake_case key
     String imageUrl = '';
-    final avatar = json['avatar'];
+    final avatar = json['avatar'] ?? json['avatar_url'] ?? json['profileImage'];
 
     if (avatar != null && avatar is Map<String, dynamic>) {
       imageUrl = avatar['url'] ?? '';
@@ -70,6 +72,8 @@ class Doctor {
       ratingValue = (ratingSummary['avgRating'] ?? 0).toDouble();
     } else if (json['rating'] != null) {
       ratingValue = (json['rating']).toDouble();
+    } else if (json['avg_rating'] != null) {
+      ratingValue = (json['avg_rating']).toDouble();
     }
 
     // ✅ Safely get reviews count
@@ -78,6 +82,8 @@ class Doctor {
       reviewsCount = ratingSummary['totalReviews'] ?? 0;
     } else if (json['reviews'] != null) {
       reviewsCount = json['reviews'];
+    } else if (json['total_reviews'] != null) {
+      reviewsCount = json['total_reviews'];
     }
 
     // ✅ Parse location (lat/lng from backend)
@@ -95,33 +101,37 @@ class Doctor {
           : null;
     }
     // Or check if latitude/longitude are direct fields
-    else if (json['latitude'] != null || json['longitude'] != null) {
-      lat = json['latitude'] != null
-          ? double.tryParse(json['latitude'].toString())
+    else if (json['latitude'] != null ||
+        json['longitude'] != null ||
+        json['lat'] != null ||
+        json['lng'] != null) {
+      lat = (json['latitude'] ?? json['lat']) != null
+          ? double.tryParse((json['latitude'] ?? json['lat']).toString())
           : null;
-      lng = json['longitude'] != null
-          ? double.tryParse(json['longitude'].toString())
+      lng = (json['longitude'] ?? json['lng']) != null
+          ? double.tryParse((json['longitude'] ?? json['lng']).toString())
           : null;
     }
 
     // ❌ REMOVED FALLBACK: Do not generate random locations.
     // Only show doctors with valid real locations.
     if (lat == null || lng == null) {
-      print(
-        '⚠️ ${json['fullName']}: No valid location found. Skipping map coordinates.',
+      debugPrint(
+        '⚠️ ${json['fullName'] ?? json['full_name']}: No valid location found. Skipping map coordinates.',
       );
     }
 
     return Doctor(
       id: json['_id'] ?? json['id'] ?? '',
-      name: json['fullName'] ?? json['name'] ?? '',
-      fullName: json['fullName'] ?? '',
+      name: json['fullName'] ?? json['full_name'] ?? json['name'] ?? '',
+      fullName: json['fullName'] ?? json['full_name'] ?? '',
       specialty: json['specialty'] ?? '',
       image: imageUrl,
       rating: ratingValue,
       reviews: reviewsCount,
       experience:
           json['experience']?.toString() ??
+          json['experience_years']?.toString() ??
           json['experienceYears']?.toString() ??
           '0',
       location:
@@ -129,11 +139,29 @@ class Doctor {
           json['address']?.toString() ??
           json['hospital'] ??
           '',
-      fees: json['fees'],
+      fees: json['fees_amount'] != null
+          ? {'amount': json['fees_amount'], 'currency': json['fees_currency']}
+          : json['fees'],
       weeklySchedule: json['weeklySchedule'] != null
           ? (json['weeklySchedule'] as List)
                 .map((e) => WeeklySchedule.fromJson(e))
                 .toList()
+          : json['weekly_schedule'] != null
+          ? (json['weekly_schedule'] as List)
+                .map((e) => WeeklySchedule.fromJson(e))
+                .toList()
+          : (json['doctor_schedules'] != null)
+          ? (() {
+              final ds = json['doctor_schedules'];
+              final List? scheduleList = (ds is List && ds.isNotEmpty)
+                  ? ds[0]['weekly_schedule']
+                  : (ds is Map)
+                  ? ds['weekly_schedule']
+                  : null;
+              return scheduleList
+                  ?.map((e) => WeeklySchedule.fromJson(e))
+                  .toList();
+            })()
           : null,
       isAvailable: json['isAvailable'] ?? true,
       distance: json['distance']?.toString() ?? 'N/A',
@@ -145,8 +173,13 @@ class Doctor {
 
       // ✅ Dynamic fields
       bio: json['bio'],
-      isVideoCallAvailable: json['isVideoCallAvailable'] ?? false,
-      visitingHoursText: json['visitingHoursText'],
+      isVideoCallAvailable:
+          json['isVideoCallAvailable'] ??
+          json['is_video_available'] ??
+          json['is_video_call_available'] ??
+          false,
+      visitingHoursText:
+          json['visitingHoursText'] ?? json['visiting_hours_text'],
     );
   }
 

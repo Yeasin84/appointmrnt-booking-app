@@ -1,7 +1,4 @@
 import 'package:aroggyapath/l10n/app_localizations.dart';
-import 'package:aroggyapath/screens/doctor/home/notifications/doctor_notifications.dart';
-import 'package:aroggyapath/screens/doctor/messages/doctor_messages_list_screen.dart';
-import 'package:aroggyapath/screens/doctor/posts/doctor_create_post_screen.dart';
 import 'package:aroggyapath/screens/doctor/profile/doctor_profile_screen.dart';
 import 'package:aroggyapath/widgets/post_card.dart';
 import 'package:flutter/material.dart';
@@ -12,8 +9,12 @@ import 'package:aroggyapath/screens/auth/sign_in_screen.dart';
 import 'package:aroggyapath/models/post_model.dart';
 import 'package:aroggyapath/providers/user_provider.dart';
 import 'dart:async';
-import 'package:aroggyapath/providers/notification_provider.dart';
-import 'package:aroggyapath/widgets/custom_image.dart';
+
+import 'widgets/doctor_home_header.dart';
+import 'widgets/doctor_home_search.dart';
+import 'widgets/search_suggestions_section.dart';
+import 'widgets/create_post_box.dart';
+import 'widgets/doctor_info_bottom_sheet.dart';
 
 class DoctorHomeScreen extends ConsumerStatefulWidget {
   const DoctorHomeScreen({super.key});
@@ -23,7 +24,7 @@ class DoctorHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
-  final bool _isSearching = false;
+  bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -38,9 +39,6 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
   bool _hasMore = true;
   Timer? _debounce;
   String _currentSearchQuery = '';
-
-  // For suggestion selection tracking
-  int _selectedSuggestionIndex = -1;
 
   @override
   void initState() {
@@ -71,24 +69,23 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
     }
   }
 
-  // ✅ ENHANCED: Search debounce with minimum 1 character
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
     final query = _searchController.text.trim();
 
-    // Clear results if query is empty
     if (query.isEmpty) {
       setState(() {
         _searchSuggestions.clear();
         _searchResults.clear();
         _currentSearchQuery = '';
-        _selectedSuggestionIndex = -1;
+        _isSearching = false;
       });
       return;
     }
 
-    // Trigger search after 300ms of no typing (faster response)
+    setState(() => _isSearching = true);
+
     _debounce = Timer(const Duration(milliseconds: 300), () {
       if (query.isNotEmpty) {
         _performSearch(query);
@@ -96,14 +93,12 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
     });
   }
 
-  // ✅ ENHANCED: Perform search with better error handling
   Future<void> _performSearch(String query) async {
     if (query.isEmpty) return;
 
     setState(() {
       _isSearchLoading = true;
       _currentSearchQuery = query;
-      _selectedSuggestionIndex = -1;
     });
 
     try {
@@ -117,7 +112,6 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
       if (result['success'] == true) {
         final posts = result['data']?['posts'] ?? [];
         final suggestions = result['data']?['suggestions'] ?? [];
-        final meta = result['data']?['meta'] ?? {};
 
         setState(() {
           _searchResults = posts
@@ -126,10 +120,6 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
           _searchSuggestions = List<Map<String, dynamic>>.from(suggestions);
           _isSearchLoading = false;
         });
-
-        debugPrint(
-          '🔍 Search complete: ${_searchResults.length} posts, ${_searchSuggestions.length} suggestions',
-        );
       } else {
         setState(() {
           _searchResults.clear();
@@ -147,7 +137,6 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
       });
 
       final l10n = AppLocalizations.of(context)!;
-      // Show error snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.searchFailed(e.toString())),
@@ -176,6 +165,7 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
     });
 
     Future.delayed(Duration.zero, () {
+      if (!mounted) return;
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -300,12 +290,10 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
   }
 
   void _navigateToCreatePost() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const DoctorCreatePostScreen()),
-    );
+    final result = await Navigator.pushNamed(context, '/doctor/create-post');
 
     if (result == true) {
+      if (!mounted) return;
       await _refreshData();
     }
   }
@@ -315,29 +303,13 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
       context,
       MaterialPageRoute(builder: (context) => const DoctorProfileScreen()),
     ).then((_) {
+      if (!mounted) return;
       legacy_provider.Provider.of<UserProvider>(
         context,
         listen: false,
       ).fetchUserProfile();
     });
   }
-
-  // void _toggleSearch() {
-  //   setState(() {
-  //     _isSearching = !_isSearching;
-  //     if (!_isSearching) {
-  //       _searchController.clear();
-  //       _searchResults.clear();
-  //       _searchSuggestions.clear();
-  //       _currentSearchQuery = '';
-  //       _selectedSuggestionIndex = -1;
-  //     } else {
-  //       Future.delayed(const Duration(milliseconds: 100), () {
-  //         _searchFocusNode.requestFocus();
-  //       });
-  //     }
-  //   });
-  // }
 
   void _showDoctorInfo(Map<String, dynamic> doctor) {
     showModalBottomSheet(
@@ -348,31 +320,23 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
     );
   }
 
-  // ✅ ENHANCED: Handle suggestion tap with different actions
   void _onSuggestionTap(Map<String, dynamic> suggestion) {
     final type = suggestion['type'];
     final data = suggestion['data'];
 
-    // Hide keyboard
     FocusScope.of(context).unfocus();
 
     if (type == 'doctor') {
-      // Show doctor details in bottom sheet
       _showDoctorInfo(data);
     } else if (type == 'category') {
-      // Search for this specialty
       final specialtyName = data['speciality_name'];
       _searchController.text = specialtyName;
       _performSearch(specialtyName);
-    } else if (type == 'post') {
-      // Scroll to this post in search results (already visible)
-      // Or you can open a post detail screen if you have one
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFF),
       body: RefreshIndicator(
@@ -380,364 +344,37 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            // ========== HEADER WITH SEARCH ==========
             SliverToBoxAdapter(
-              child: legacy_provider.Consumer<UserProvider>(
-                builder: (context, userProvider, child) {
-                  final user = userProvider.user;
-                  final generalUnreadCountValue = ref.watch(
-                    generalUnreadCountProvider,
-                  );
-
-                  return Container(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF1664CD).withOpacity(0.1),
-                          Colors.white,
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: _navigateToProfile,
-                              child: CustomImage(
-                                imageUrl: user?.profileImage,
-                                width: 56,
-                                height: 56,
-                                shape: BoxShape.circle,
-                                // placeholderAsset:
-                                //     'assets/images/doctor_booking.png',
-                              ),
-                            ),
-
-                            const SizedBox(width: 15),
-
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    user?.fullName ?? 'Doctor',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1B2C49),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    user?.specialty ?? 'General Physician',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // IconButton(
-                            //   icon: Icon(
-                            //     _isSearching ? Icons.close : Icons.search,
-                            //     color: const Color(0xFF1B2C49),
-                            //     size: 24,
-                            //   ),
-                            //   onPressed: _toggleSearch,
-                            // ),
-                            Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.notifications_outlined,
-                                    color: Color(0xFF1B2C49),
-                                    size: 24,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const DoctorNotificationScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                if (generalUnreadCountValue > 0)
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.white,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        // ✅ ENHANCED: Search bar with better UX
-                        if (_isSearching) ...[
-                          const SizedBox(height: 15),
-                          Container(
-                            decoration: BoxDecoration(
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: TextField(
-                              controller: _searchController,
-                              focusNode: _searchFocusNode,
-                              autofocus: true,
-                              style: const TextStyle(fontSize: 15),
-                              decoration: InputDecoration(
-                                hintText: l10n.searchHintDoctor,
-                                hintStyle: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 14,
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.search,
-                                  color: Color(0xFF1664CD),
-                                  size: 22,
-                                ),
-                                suffixIcon: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (_isSearchLoading)
-                                      const Padding(
-                                        padding: EdgeInsets.all(12.0),
-                                        child: SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      ),
-                                    if (_searchController.text.isNotEmpty &&
-                                        !_isSearchLoading)
-                                      IconButton(
-                                        icon: const Icon(Icons.clear, size: 20),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                        },
-                                      ),
-                                  ],
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: BorderSide.none,
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF1664CD),
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 14,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                },
+              child: Column(
+                children: [
+                  DoctorHomeHeader(onProfileTap: _navigateToProfile),
+                  DoctorHomeSearch(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    isSearchLoading: _isSearchLoading,
+                    onClear: () {
+                      _searchController.clear();
+                      setState(() {
+                        _isSearching = false;
+                        _searchResults.clear();
+                        _searchSuggestions.clear();
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
 
-            // ========== SEARCH SUGGESTIONS ==========
             if (_isSearching &&
                 _searchSuggestions.isNotEmpty &&
                 _searchController.text.isNotEmpty)
               SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 15,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.trending_up,
-                              size: 18,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              l10n.suggestions,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.only(bottom: 8),
-                        itemCount: _searchSuggestions.length,
-                        separatorBuilder: (context, index) => Divider(
-                          height: 1,
-                          indent: 60,
-                          color: Colors.grey[200],
-                        ),
-                        itemBuilder: (context, index) {
-                          final suggestion = _searchSuggestions[index];
-                          final type = suggestion['type'];
-                          final text = suggestion['text'] ?? '';
-                          final subtext = suggestion['subtext'] ?? '';
-
-                          IconData icon;
-                          Color iconColor;
-                          Color bgColor;
-
-                          switch (type) {
-                            case 'doctor':
-                              icon = Icons.person;
-                              iconColor = const Color(0xFF1664CD);
-                              bgColor = const Color(
-                                0xFF1664CD,
-                              ).withOpacity(0.1);
-                              break;
-                            case 'category':
-                              icon = Icons.medical_services;
-                              iconColor = const Color(0xFFFF9800);
-                              bgColor = const Color(
-                                0xFFFF9800,
-                              ).withOpacity(0.1);
-                              break;
-                            case 'post':
-                              icon = Icons.article;
-                              iconColor = const Color(0xFF4CAF50);
-                              bgColor = const Color(
-                                0xFF4CAF50,
-                              ).withOpacity(0.1);
-                              break;
-                            default:
-                              icon = Icons.search;
-                              iconColor = Colors.grey;
-                              bgColor = Colors.grey.withOpacity(0.1);
-                          }
-
-                          return InkWell(
-                            onTap: () => _onSuggestionTap(suggestion),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: bgColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      icon,
-                                      size: 20,
-                                      color: iconColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          text,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0xFF1B2C49),
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (subtext.isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            subtext,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.north_west,
-                                    size: 16,
-                                    color: Colors.grey[400],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                child: SearchSuggestionsSection(
+                  suggestions: _searchSuggestions,
+                  onSuggestionTap: _onSuggestionTap,
                 ),
               ),
 
-            // ========== MAIN CONTENT ==========
             SliverToBoxAdapter(child: _buildContent()),
           ],
         ),
@@ -747,101 +384,28 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
 
   Widget _buildContent() {
     final l10n = AppLocalizations.of(context)!;
-    // ✅ Show search results when searching
+
     if (_isSearching) {
       if (_isSearchLoading && _searchController.text.isNotEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(50.0),
-            child: Column(
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.searching,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-        );
+        return _buildLoadingState(l10n.searching);
       }
 
       if (_searchController.text.isEmpty) {
-        return Padding(
-          padding: const EdgeInsets.all(40.0),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1664CD).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.search,
-                  size: 60,
-                  color: Color(0xFF1664CD),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                l10n.searchAnything,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B2C49),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.findEverything,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-            ],
-          ),
+        return _buildSearchEmptyState(
+          icon: Icons.search,
+          title: l10n.searchAnything,
+          subtitle: l10n.findEverything,
         );
       }
 
       if (_searchResults.isEmpty && !_isSearchLoading) {
-        return Padding(
-          padding: const EdgeInsets.all(40.0),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.search_off,
-                  size: 60,
-                  color: Colors.grey[400],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                l10n.noResultsFound,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B2C49),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.tryDifferentKeywords,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-            ],
-          ),
+        return _buildSearchEmptyState(
+          icon: Icons.search_off,
+          title: l10n.noResultsFound,
+          subtitle: l10n.tryDifferentKeywords,
         );
       }
 
-      // Show search results
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -883,63 +447,20 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
       );
     }
 
-    //  Show normal feed when not searching
     if (_isLoading && _posts.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(50.0),
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return _buildLoadingState(null);
     }
 
     if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _loadPosts,
-                icon: const Icon(Icons.refresh),
-                label: Text(l10n.retry),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1664CD),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildErrorState(l10n);
     }
 
     return Column(
       children: [
-        _buildCreatePostBox(),
+        CreatePostBox(onNavigateToCreatePost: _navigateToCreatePost),
 
         if (_posts.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              children: [
-                const Icon(Icons.post_add, size: 60, color: Colors.grey),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.noPostsYet,
-                  style: const TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-              ],
-            ),
-          )
+          _buildNoPostsState(l10n)
         else
           ListView.builder(
             shrinkWrap: true,
@@ -968,308 +489,104 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
     );
   }
 
-  Widget _buildCreatePostBox() {
-    final l10n = AppLocalizations.of(context)!;
-    return legacy_provider.Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
-        final user = userProvider.user;
-
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+  Widget _buildLoadingState(String? message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(50.0),
+        child: Column(
+          children: [
+            const CircularProgressIndicator(),
+            if (message != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                message,
+                style: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage:
-                        user?.profileImage != null &&
-                            user!.profileImage!.isNotEmpty
-                        ? NetworkImage(user.profileImage!)
-                        : const AssetImage('assets/images/doctor_booking.png')
-                              as ImageProvider,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _navigateToCreatePost,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF5F8FF),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: Text(
-                          l10n.shareInsights,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-              const Divider(height: 1, color: Color(0xFFF0F0F0)),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildPostAction(
-                    Icons.image_outlined,
-                    l10n.photo,
-                    Colors.brown,
-                    _navigateToCreatePost,
-                  ),
-                  _buildPostAction(
-                    Icons.videocam_outlined,
-                    l10n.video,
-                    Colors.redAccent,
-                    _navigateToCreatePost,
-                  ),
-                  _buildPostAction(
-                    Icons.play_circle_outline,
-                    l10n.reels,
-                    Colors.blueAccent,
-                    _navigateToCreatePost,
-                  ),
-
-                  InkWell(
-                    onTap: _navigateToCreatePost,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF1664CD)),
-                      ),
-                      child: Text(
-                        l10n.createPost,
-                        style: const TextStyle(
-                          color: Color(0xFF1664CD),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildPostAction(
-    IconData icon,
-    String label,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Row(
+  Widget _buildSearchEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(40.0),
+      child: Column(
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 4),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1664CD).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 60, color: const Color(0xFF1664CD)),
+          ),
+          const SizedBox(height: 20),
           Text(
-            label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1B2C49),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
         ],
       ),
     );
   }
-}
 
-// ✅ ENHANCED: Doctor Info Bottom Sheet
-class DoctorInfoBottomSheet extends StatelessWidget {
-  final Map<String, dynamic> doctor;
-
-  const DoctorInfoBottomSheet({super.key, required this.doctor});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final String doctorName = doctor['fullName'] ?? 'Doctor';
-    final String? doctorImage = doctor['avatar']?['url'];
-    final String doctorId = doctor['_id'] ?? '';
-    final String specialty = doctor['specialty'] ?? 'General Physician';
-    final String bio = doctor['bio'] ?? l10n.noBioAvailable;
-    final int experienceYears = doctor['experienceYears'] ?? 0;
-    final List degrees = doctor['degrees'] ?? [];
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: SingleChildScrollView(
+  Widget _buildErrorState(AppLocalizations l10n) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: doctorImage != null
-                  ? NetworkImage(doctorImage)
-                  : const AssetImage('assets/images/doctor.png')
-                        as ImageProvider,
-            ),
+            Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
             const SizedBox(height: 16),
-
             Text(
-              doctorName,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B2C49),
-              ),
+              _errorMessage!,
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-
-            // Specialty
-            Text(
-              specialty,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 8),
-
-            if (experienceYears > 0)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1664CD).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l10n.yearsExperience(experienceYears),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF1664CD),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
-
-            if (bio != l10n.noBioAvailable)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F8FF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  bio,
-                  style: const TextStyle(fontSize: 14, height: 1.5),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            const SizedBox(height: 16),
-
-            if (degrees.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: degrees.map<Widget>((degree) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F1FF),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(0xFF1664CD).withOpacity(0.2),
-                      ),
-                    ),
-                    child: Text(
-                      degree['title'] ?? '',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF1664CD),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          DoctorMessagesListScreen(initialDoctorId: doctorId),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.message_outlined),
-                label: Text(
-                  l10n.message,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1664CD),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadPosts,
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.retry),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1664CD),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNoPostsState(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        children: [
+          const Icon(Icons.post_add, size: 60, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text(
+            l10n.noPostsYet,
+            style: const TextStyle(color: Colors.grey, fontSize: 16),
+          ),
+        ],
       ),
     );
   }

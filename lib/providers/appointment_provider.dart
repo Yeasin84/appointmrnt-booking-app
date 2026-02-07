@@ -207,23 +207,17 @@ class AppointmentProvider with ChangeNotifier {
     }
   }
 
-  /// Complete appointment (Doctor - from Session Holder)
-  /// FIXED: এখন updateAppointmentStatus কেই call করছে সঠিক data দিয়ে
+  /// Complete appointment (Doctor)
   Future<bool> completeAppointment({
     required String appointmentId,
-    required String patientName,
-    required double price,
+    String? notes,
   }) async {
     try {
-      debugPrint('Completing appointment: $appointmentId');
-      debugPrint('   Patient: $patientName, Price: $price');
+      debugPrint('Completing appointment: $appointmentId (Supabase)');
 
-      // গুরুত্বপূর্ণ ফিক্স: backend এর expected key গুলো পাঠানো হচ্ছে
-      final response = await _appointmentService.updateAppointmentStatus(
+      final response = await _appointmentService.completeAppointment(
         appointmentId: appointmentId,
-        status: 'completed',
-        patient: patientName, // backend validation এর জন্য দরকার
-        price: price, // এটাই paidAmount হিসেবে save হবে
+        notes: notes,
       );
 
       if (response['success'] == true) {
@@ -234,8 +228,7 @@ class AppointmentProvider with ChangeNotifier {
         if (index != -1) {
           _appointments[index] = _appointments[index].copyWith(
             status: 'completed',
-            // যদি model এ paidAmount field থাকে তাহলে এখানে add করতে পারো
-            // paidAmount: price,
+            notes: notes,
           );
         }
         notifyListeners();

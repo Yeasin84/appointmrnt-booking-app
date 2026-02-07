@@ -60,8 +60,10 @@ class _DoctorPersonalInfoScreenState extends State<DoctorPersonalInfoScreen> {
       final response = await ApiService.getAllCategories();
       if (response['success'] == true && response['data'] != null) {
         final List<dynamic> categoryData = response['data'];
+        if (!mounted) return;
         setState(() {
           _specialtyOptions = categoryData
+              .where((c) => c['speciality_name'] != null) // ✅ Safety check
               .map((c) => c['speciality_name'] as String)
               .toList();
           _isLoadingCategories = false;
@@ -119,6 +121,7 @@ class _DoctorPersonalInfoScreenState extends State<DoctorPersonalInfoScreen> {
       );
 
       if (image != null) {
+        if (!mounted) return;
         setState(() {
           _selectedImage = File(image.path);
           _hasChanges = true;
@@ -207,6 +210,7 @@ class _DoctorPersonalInfoScreenState extends State<DoctorPersonalInfoScreen> {
     );
 
     if (result != null) {
+      if (!mounted) return;
       setState(() {
         _latitude = result['latitude'];
         _longitude = result['longitude'];
@@ -240,15 +244,6 @@ class _DoctorPersonalInfoScreenState extends State<DoctorPersonalInfoScreen> {
       debugPrint('   - Longitude: $_longitude');
       debugPrint('   - Address: ${_addressController.text}');
 
-      // ✅ Create location map if both lat and lng are available
-      Map<String, dynamic>? locationData;
-      if (_latitude != null && _longitude != null) {
-        locationData = {
-          'lat': _latitude.toString(),
-          'lng': _longitude.toString(),
-        };
-      }
-
       final success = await userProvider.updateUserProfile(
         fullName: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
@@ -256,10 +251,10 @@ class _DoctorPersonalInfoScreenState extends State<DoctorPersonalInfoScreen> {
         bio: _bioController.text.trim(),
         specialty: _specialtyController.text.trim(),
         profileImage: _selectedImage,
-        latitude: _latitude, // ✅ Pass as separate parameters
         longitude: _longitude, // ✅ Pass as separate parameters
       );
 
+      if (!mounted) return;
       setState(() => _isLoading = false);
 
       if (mounted) {

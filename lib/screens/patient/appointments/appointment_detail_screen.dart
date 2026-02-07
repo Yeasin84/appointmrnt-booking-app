@@ -77,7 +77,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: _getStatusColor(
                                   appointment.status,
-                                ).withOpacity(0.2),
+                                ).withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(
@@ -97,7 +97,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: const Color(
                                     0xFF6C5CE7,
-                                  ).withOpacity(0.1),
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(5),
                                   border: Border.all(
                                     color: const Color(0xFF6C5CE7),
@@ -142,12 +142,14 @@ class AppointmentDetailScreen extends StatelessWidget {
                     appointment.appointmentTime,
                   ),
                   const Divider(height: 30),
-                    _buildInfoRow(
-                    appointment.appointmentType == 'video' 
-                      ? Icons.videocam 
-                      : Icons.medical_services,
+                  _buildInfoRow(
+                    appointment.appointmentType == 'video'
+                        ? Icons.videocam
+                        : Icons.medical_services,
                     'Type',
-                    appointment.appointmentType == 'video' ? 'Video' : 'Physical',
+                    appointment.appointmentType == 'video'
+                        ? 'Video'
+                        : 'Physical',
                   ),
                   if (appointment.notes != null) ...[
                     const Divider(height: 30),
@@ -298,6 +300,7 @@ class AppointmentDetailScreen extends StatelessWidget {
       // Call cancel API
       final success = await provider.cancelAppointment(appointment.id);
 
+      if (!context.mounted) return;
       // Close loading
       Navigator.pop(context);
 
@@ -384,7 +387,9 @@ class AppointmentDetailScreen extends StatelessWidget {
       ),
     ).then((_) {
       // Go back after reschedule
-      Navigator.pop(context);
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
     });
   }
 
@@ -426,6 +431,7 @@ class AppointmentDetailScreen extends StatelessWidget {
 
       final result = await ApiService.createOrGetChat(userId: doctorId);
 
+      if (!context.mounted) return;
       Navigator.pop(context);
 
       if (result['success'] == true) {
@@ -441,6 +447,7 @@ class AppointmentDetailScreen extends StatelessWidget {
           return;
         }
 
+        if (!context.mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -476,6 +483,7 @@ class AppointmentDetailScreen extends StatelessWidget {
         );
       }
     } catch (e) {
+      if (!context.mounted) return;
       Navigator.pop(context);
 
       showDialog(

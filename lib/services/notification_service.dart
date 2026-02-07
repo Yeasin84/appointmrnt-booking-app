@@ -84,7 +84,6 @@ class NotificationService {
   /// Handle navigation logic based on message
   static void _handleMessage(RemoteMessage message) {
     debugPrint('🔄 Handling notification interaction: ${message.data}');
-    // TODO: Add your navigation logic here based on message.data
     // Example: Navigator.pushNamed(context, '/chat', arguments: message.data);
   }
 

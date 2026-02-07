@@ -135,11 +135,13 @@ class AuthService {
       };
 
       if (userType.toLowerCase() == 'doctor') {
-        if (medicalLicenseNumber != null)
+        if (medicalLicenseNumber != null) {
           userMetadata['medicalLicenseNumber'] = medicalLicenseNumber;
+        }
         if (specialty != null) userMetadata['specialty'] = specialty;
-        if (experienceYears != null)
+        if (experienceYears != null) {
           userMetadata['experienceYears'] = experienceYears;
+        }
       }
 
       final response = await supabase.auth.signUp(

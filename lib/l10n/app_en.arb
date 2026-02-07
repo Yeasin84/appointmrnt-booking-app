@@ -32,6 +32,10 @@
   "@french": {
     "description": "French language name"
   },
+  "bangla": "Bangla",
+  "@bangla": {
+    "description": "Bangla language name"
+  },
   "navHome": "Home",
   "@navHome": {
     "description": "Navigation label for Home"

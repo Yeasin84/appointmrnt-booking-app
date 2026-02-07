@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:aroggyapath/services/doctor_schedule_service.dart';
+import '../../../providers/user_provider.dart';
+import 'package:provider/provider.dart';
+import '../../../models/user_model.dart';
 import 'package:aroggyapath/l10n/app_localizations.dart';
 
 class DoctorMyScheduleScreen extends StatefulWidget {
@@ -10,9 +12,10 @@ class DoctorMyScheduleScreen extends StatefulWidget {
 }
 
 class _DoctorMyScheduleScreenState extends State<DoctorMyScheduleScreen> {
-  bool onlineAppointment = true;
+  // ❌ REMOVED: onlineAppointment handled via profiles screen
+  // bool onlineAppointment = true;
+
   final TextEditingController _feesController = TextEditingController();
-  final DoctorScheduleService _scheduleService = DoctorScheduleService();
 
   bool _isSaving = false;
   String selectedSlotKey = "";
@@ -117,9 +120,11 @@ class _DoctorMyScheduleScreenState extends State<DoctorMyScheduleScreen> {
       },
     );
 
+    if (!mounted) return;
     final startTime = await _selectTime(context);
     if (startTime == null) return;
 
+    if (!mounted) return;
     // Show info dialog and select end time
     await showDialog(
       context: context,
@@ -147,12 +152,15 @@ class _DoctorMyScheduleScreenState extends State<DoctorMyScheduleScreen> {
       },
     );
 
+    if (!mounted) return;
     final endTime = await _selectTime(context, initialTime: startTime);
     if (endTime == null) return;
 
     // Validate if end time is after start time
     final start24 = _convertTo24Hour(startTime);
     final end24 = _convertTo24Hour(endTime);
+
+    if (!mounted) return;
 
     if (start24.compareTo(end24) >= 0) {
       _showSnackBar(l10n.endTimeError, Colors.red);
@@ -166,67 +174,50 @@ class _DoctorMyScheduleScreenState extends State<DoctorMyScheduleScreen> {
 
   /// Load doctor's existing schedule from backend
   Future<void> _loadExistingSchedule() async {
-    try {
-      final response = await _scheduleService.getMySchedule();
-
-      if (response['success'] == true && response['data'] != null) {
-        final userData = response['data'];
-
-        // Load fees
-        if (userData['fees'] != null && userData['fees']['amount'] != null) {
-          setState(() {
-            _feesController.text = userData['fees']['amount'].toString();
-          });
-        }
-
-        // ✅ Load video call availability (onlineAppointment)
-        bool? isVideoAvailable =
-            userData['isVideoCallAvailable'] ??
-            userData['isVideoAvailable'] ??
-            userData['isAvailable'] ??
-            (userData['video']?['isAvailable']);
-
-        if (isVideoAvailable != null) {
-          setState(() {
-            onlineAppointment = isVideoAvailable;
-          });
-          debugPrint('✅ Loaded video call availability: $onlineAppointment');
-        }
-
-        // Load weeklySchedule
-        if (userData['weeklySchedule'] != null) {
-          final backendSchedule = userData['weeklySchedule'] as List;
-
-          setState(() {
-            for (var i = 0; i < scheduleData.length; i++) {
-              final dayName = scheduleData[i]['day'].toString().toLowerCase();
-
-              final backendDay = backendSchedule.firstWhere(
-                (day) => day['day'].toString().toLowerCase() == dayName,
-                orElse: () => null,
-              );
-
-              if (backendDay != null) {
-                scheduleData[i]['enabled'] = backendDay['isActive'] ?? false;
-
-                if (backendDay['slots'] != null &&
-                    (backendDay['slots'] as List).isNotEmpty) {
-                  scheduleData[i]['slots'] = (backendDay['slots'] as List)
-                      .map(
-                        (slot) => {
-                          'start': _convert24To12Hour(slot['start']),
-                          'end': _convert24To12Hour(slot['end']),
-                        },
-                      )
-                      .toList();
-                }
-              }
-            }
-          });
-        }
+    final user = context.read<UserProvider>().user;
+    if (user != null) {
+      // Load fees
+      if (user.feesAmount != null) {
+        setState(() {
+          _feesController.text = user.feesAmount.toString();
+        });
       }
-    } catch (e) {
-      debugPrint('Error loading schedule: $e');
+
+      // ❌ REMOVED: Video call availability moved to profile screen
+      // setState(() {
+      //   onlineAppointment = user.isVideoCallAvailable;
+      // });
+      // debugPrint('✅ Loaded video call availability: $onlineAppointment');
+
+      // Load weeklySchedule
+      if (user.weeklySchedule != null) {
+        setState(() {
+          for (var i = 0; i < scheduleData.length; i++) {
+            final dayName = scheduleData[i]['day'].toString().toLowerCase();
+
+            final backendDay = user.weeklySchedule!.firstWhere(
+              (day) => day.day.toLowerCase() == dayName,
+              orElse: () => DaySchedule(day: dayName, isActive: false),
+            );
+
+            scheduleData[i]['enabled'] = backendDay.isActive;
+            if (backendDay.slots != null && backendDay.slots!.isNotEmpty) {
+              scheduleData[i]['slots'] = backendDay.slots!
+                  .map(
+                    (slot) => {
+                      'start': _convert24To12Hour(slot.start),
+                      'end': _convert24To12Hour(slot.end),
+                    },
+                  )
+                  .toList();
+            }
+          }
+        });
+      }
+    } else {
+      // If user not in provider, fetch it
+      await context.read<UserProvider>().fetchUserProfile();
+      _loadExistingSchedule(); // Recursive call once loaded
     }
   }
 
@@ -243,8 +234,7 @@ class _DoctorMyScheduleScreenState extends State<DoctorMyScheduleScreen> {
     setState(() => _isSaving = true);
 
     try {
-      debugPrint('📤 Saving doctor schedule...');
-      debugPrint('   - Video Call Available: $onlineAppointment'); // ✅ Log this
+      debugPrint('📤 Saving doctor schedule via UserProvider...');
 
       final List<Map<String, dynamic>> formattedSchedule = scheduleData.map((
         dayData,
@@ -268,24 +258,24 @@ class _DoctorMyScheduleScreenState extends State<DoctorMyScheduleScreen> {
         'currency': 'USD',
       };
 
-      // ✅ IMPORTANT: Pass isVideoCallAvailable
-      final response = await _scheduleService.saveWeeklySchedule(
+      // ✅ Use standard UserProvider.updateUserProfile
+      final success = await context.read<UserProvider>().updateUserProfile(
         weeklySchedule: formattedSchedule,
         fees: fees,
-        isVideoCallAvailable: onlineAppointment, // ✅ This is the fix!
+        // ❌ REMOVED: isVideoCallAvailable: onlineAppointment,
       );
 
       if (mounted) {
-        if (response['success'] == true) {
+        if (success) {
           debugPrint('✅ Schedule saved successfully!');
-          debugPrint('   - isVideoCallAvailable saved as: $onlineAppointment');
           _showSnackBar(
             AppLocalizations.of(context)!.scheduleSavedSuccess,
             Colors.green,
           );
         } else {
-          debugPrint('❌ Save failed: ${response['message']}');
-          _showSnackBar(response['message'] ?? 'Failed to save', Colors.red);
+          final error = context.read<UserProvider>().error;
+          debugPrint('❌ Save failed: $error');
+          _showSnackBar(error ?? 'Failed to save', Colors.red);
         }
       }
     } catch (e) {
@@ -327,7 +317,7 @@ class _DoctorMyScheduleScreenState extends State<DoctorMyScheduleScreen> {
 
       return "${hour.toString().padLeft(2, '0')}:$minute";
     } catch (e) {
-      print('Error converting to 24h: $time12 - $e');
+      debugPrint('Error converting to 24h: $time12 - $e');
       return "00:00";
     }
   }
@@ -379,47 +369,6 @@ class _DoctorMyScheduleScreenState extends State<DoctorMyScheduleScreen> {
               style: const TextStyle(
                 color: Color.fromARGB(255, 0, 0, 0),
                 fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Online Appointment Toggle
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE9F0FF),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.video_call_outlined,
-                      color: Color(0xFF1B2C49),
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context)!.onlineAppointment,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF1B2C49),
-                      ),
-                    ),
-                  ),
-                  Switch(
-                    value: onlineAppointment,
-                    activeThumbColor: const Color(0xFF6C63FF),
-                    onChanged: (val) => setState(() => onlineAppointment = val),
-                  ),
-                ],
               ),
             ),
             const SizedBox(height: 20),

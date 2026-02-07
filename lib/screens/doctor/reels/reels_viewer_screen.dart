@@ -61,7 +61,7 @@ class _ReelsViewerScreenState extends State<ReelsViewerScreen> {
     final videoUrl = widget.reelsList[index]['video']?['url'];
     if (videoUrl == null) return;
 
-    final controller = VideoPlayerController.network(videoUrl);
+    final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
     _videoControllers[index] = controller;
 
     try {

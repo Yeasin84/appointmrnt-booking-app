@@ -31,7 +31,14 @@ class _PatientMessagesListScreenState extends State<PatientMessagesListScreen> {
 
   // ✅ Setup Supabase listener for real-time updates
   void _setupSupabaseListener() {
-    // TODO: Implement Supabase real-time listener for chat list
+    final supabase = ApiService.supabase;
+    supabase.from('chats').stream(primaryKey: ['id']).listen((
+      List<Map<String, dynamic>> data,
+    ) {
+      if (mounted) {
+        _loadChats(quiet: true);
+      }
+    });
   }
 
   Future<void> _loadCurrentUserId() async {
@@ -97,7 +104,7 @@ class _PatientMessagesListScreenState extends State<PatientMessagesListScreen> {
               'content': lastMessage?['content'] ?? '',
               'createdAt': lastMessage?['created_at'] ?? chat['updated_at'],
             },
-            'unreadCount': 0, // TODO: Implement unread count
+            'unreadCount': 0,
             'updatedAt': chat['updated_at'],
           });
         }
@@ -171,10 +178,7 @@ class _PatientMessagesListScreenState extends State<PatientMessagesListScreen> {
       try {
         final idsToDelete = _selectedConversationIds.toList();
         for (var id in idsToDelete) {
-          // TODO: Implement Supabase chat deletion
-          /*
-          await ApiService.deleteChat(chatId: id);
-          */
+          await ApiService.deleteConversation(id);
         }
 
         if (mounted) {
@@ -364,7 +368,7 @@ class _PatientMessagesListScreenState extends State<PatientMessagesListScreen> {
                 : Border.all(color: Colors.transparent),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

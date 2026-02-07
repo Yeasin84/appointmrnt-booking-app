@@ -56,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     "Skip",
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.black.withOpacity(0.7),
+                      color: Colors.black.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -186,7 +186,7 @@ class _OnboardPage extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                 ),

@@ -21,7 +21,11 @@ class DoctorService {
 
       final List<dynamic> data = await Supabase.instance.client.rpc(
         'get_nearby_doctors',
-        params: {'user_lat': lat, 'user_lng': lng, 'radius_km': radiusKm},
+        params: {
+          'user_lat': lat.toDouble(),
+          'user_lng': lng.toDouble(),
+          'radius_km': radiusKm.toDouble(),
+        },
       );
 
       return {'success': true, 'data': data};
@@ -43,9 +47,10 @@ class DoctorService {
     try {
       final data = await Supabase.instance.client
           .from('profiles')
-          .select()
+          .select('*, doctor_schedules(weekly_schedule)')
           .eq('id', id)
           .single();
+
       return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Get Doctor By ID Error: $e');
@@ -57,9 +62,10 @@ class DoctorService {
     try {
       final data = await Supabase.instance.client
           .from('profiles')
-          .select()
+          .select('*, doctor_schedules(weekly_schedule)')
           .eq('role', 'doctor')
           .ilike('full_name', '%$query%');
+
       return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Search Doctors Error: $e');

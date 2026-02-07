@@ -28,7 +28,7 @@ class ProfileCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1664CD).withOpacity(0.3),
+              color: const Color(0xFF1664CD).withValues(alpha: 0.3),
               spreadRadius: 2,
               blurRadius: 10,
               offset: const Offset(0, 4),
@@ -38,11 +38,7 @@ class ProfileCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 70,
-              color: Colors.white,
-            ),
+            Icon(icon, size: 70, color: Colors.white),
             const SizedBox(height: 15),
             Text(
               title,

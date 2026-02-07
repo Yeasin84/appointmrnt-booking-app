@@ -1,28 +1,26 @@
 import 'package:flutter/material.dart';
-
-import 'api_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DependentService {
+  static final supabase = Supabase.instance.client;
+
   /// Get all dependents for current user
   Future<Map<String, dynamic>> getMyDependents() async {
     try {
-      debugPrint('📤 Fetching dependents...');
+      debugPrint('📤 Fetching dependents (Supabase)...');
 
-      // ✅ FIXED: Correct endpoint
-      final response = await ApiService.get(
-        '/api/v1/user/me/dependents', // ← Fixed from /api/v1/user/profile/me/dependents
-        requiresAuth: true,
-      );
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return {'success': false, 'message': 'Not logged in'};
 
-      if (response['success'] == true) {
-        debugPrint(
-          '✅ Dependents fetched: ${(response['data'] as List?)?.length ?? 0}',
-        );
-      } else {
-        debugPrint('❌ Failed to fetch dependents: ${response['message']}');
-      }
+      final data = await supabase
+          .from('dependents')
+          .select()
+          .eq('user_id', userId)
+          .eq('is_active', true);
 
-      return response;
+      debugPrint('✅ Dependents fetched: ${data.length}');
+
+      return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Get Dependents Error: $e');
       return {
@@ -43,32 +41,29 @@ class DependentService {
     String? notes,
   }) async {
     try {
-      debugPrint('📤 Creating dependent...');
+      debugPrint('📤 Creating dependent (Supabase)...');
+
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return {'success': false, 'message': 'Not logged in'};
 
       final body = {
-        'fullName': fullName,
+        'user_id': userId,
+        'full_name': fullName,
         'relationship': relationship,
-        'dob': dob.toIso8601String().split('T')[0], // "2020-05-15"
+        'dob': dob.toIso8601String().split('T')[0],
         'gender': gender,
         if (phone != null && phone.isNotEmpty) 'phone': phone,
         if (notes != null && notes.isNotEmpty) 'notes': notes,
       };
 
-      debugPrint('📦 Body: $body');
+      final data = await supabase
+          .from('dependents')
+          .insert(body)
+          .select()
+          .single();
 
-      final response = await ApiService.post(
-        '/api/v1/user/me/dependents',
-        body,
-        requiresAuth: true,
-      );
-
-      if (response['success'] == true) {
-        debugPrint('✅ Dependent created successfully');
-      } else {
-        debugPrint('❌ Failed to create dependent: ${response['message']}');
-      }
-
-      return response;
+      debugPrint('✅ Dependent created successfully');
+      return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Create Dependent Error: $e');
       return {'success': false, 'message': 'Failed to create dependent: $e'};
@@ -87,32 +82,28 @@ class DependentService {
     bool? isActive,
   }) async {
     try {
-      debugPrint('📤 Updating dependent: $dependentId');
+      debugPrint('📤 Updating dependent: $dependentId (Supabase)');
 
       final body = <String, dynamic>{};
-      if (fullName != null) body['fullName'] = fullName;
+      if (fullName != null) body['full_name'] = fullName;
       if (relationship != null) body['relationship'] = relationship;
       if (dob != null) body['dob'] = dob.toIso8601String().split('T')[0];
       if (gender != null) body['gender'] = gender;
       if (phone != null) body['phone'] = phone;
       if (notes != null) body['notes'] = notes;
-      if (isActive != null) body['isActive'] = isActive;
+      if (isActive != null) body['is_active'] = isActive;
 
-      debugPrint('📦 Body: $body');
+      if (body.isEmpty) return {'success': true};
 
-      final response = await ApiService.patch(
-        '/api/v1/user/me/dependents/$dependentId',
-        body,
-        requiresAuth: true,
-      );
+      final data = await supabase
+          .from('dependents')
+          .update(body)
+          .eq('id', dependentId)
+          .select()
+          .single();
 
-      if (response['success'] == true) {
-        debugPrint('✅ Dependent updated successfully');
-      } else {
-        debugPrint('❌ Failed to update dependent: ${response['message']}');
-      }
-
-      return response;
+      debugPrint('✅ Dependent updated successfully');
+      return {'success': true, 'data': data};
     } catch (e) {
       debugPrint('❌ Update Dependent Error: $e');
       return {'success': false, 'message': 'Failed to update dependent: $e'};
@@ -122,20 +113,15 @@ class DependentService {
   /// Delete dependent
   Future<Map<String, dynamic>> deleteDependent(String dependentId) async {
     try {
-      debugPrint('📤 Deleting dependent: $dependentId');
+      debugPrint('📤 Deleting dependent: $dependentId (Supabase)');
 
-      final response = await ApiService.delete(
-        '/api/v1/user/me/dependents/$dependentId',
-        requiresAuth: true,
-      );
+      await supabase
+          .from('dependents')
+          .update({'is_active': false})
+          .eq('id', dependentId);
 
-      if (response['success'] == true) {
-        debugPrint('✅ Dependent deleted successfully');
-      } else {
-        debugPrint('❌ Failed to delete dependent: ${response['message']}');
-      }
-
-      return response;
+      debugPrint('✅ Dependent deleted (inactivated) successfully');
+      return {'success': true};
     } catch (e) {
       debugPrint('❌ Delete Dependent Error: $e');
       return {'success': false, 'message': 'Failed to delete dependent: $e'};

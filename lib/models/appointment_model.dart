@@ -92,7 +92,10 @@ class AppointmentModel {
     DateTime appointmentDate;
     try {
       appointmentDate = DateTime.parse(
-        json['appointmentDate'] ?? json['date'] ?? DateTime.now().toString(),
+        json['appointment_date'] ??
+            json['appointmentDate'] ??
+            json['date'] ??
+            DateTime.now().toString(),
       );
     } catch (e) {
       appointmentDate = DateTime.now();
@@ -191,9 +194,15 @@ class AppointmentModel {
       patientName: patientName,
       patientImage: patientImage,
       appointmentDate: appointmentDate,
-      appointmentTime: json['time'] ?? json['appointmentTime'] ?? '',
+      appointmentTime:
+          json['time'] ??
+          json['appointment_time'] ??
+          json['appointmentTime'] ??
+          '',
       status: json['status'] ?? 'pending',
-      appointmentType: json['appointmentType']?.toString().toLowerCase(),
+      appointmentType: (json['appointment_type'] ?? json['appointmentType'])
+          ?.toString()
+          .toLowerCase(),
       symptoms: json['symptoms'],
       notes: json['notes'],
       reason: json['reason'],

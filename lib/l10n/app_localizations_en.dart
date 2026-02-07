@@ -33,6 +33,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get french => 'French';
 
   @override
+  String get bangla => 'Bangla';
+
+  @override
   String get navHome => 'Home';
 
   @override

@@ -14,6 +14,7 @@ import 'package:aroggyapath/services/api_service.dart';
 import 'package:aroggyapath/services/notification_poller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:aroggyapath/utils/app_theme.dart';
 import 'package:aroggyapath/providers/locale_provider.dart';
 import 'package:aroggyapath/services/auth_service.dart';
 
@@ -136,15 +137,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         GlobalCupertinoLocalizations.delegate,
       ],
 
-      supportedLocales: const [Locale('en'), Locale('ar'), Locale('fr')],
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(fontSize: 16),
-          bodyMedium: TextStyle(fontSize: 14),
-        ),
-      ),
+      supportedLocales: const [Locale('en'), Locale('bn')],
+      theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
 
       home: _buildHomeScreen(),

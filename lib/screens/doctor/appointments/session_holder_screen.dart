@@ -51,8 +51,6 @@ class _SessionHolderScreenState extends State<SessionHolderScreen> {
       final provider = context.read<AppointmentProvider>();
       final success = await provider.completeAppointment(
         appointmentId: widget.appointment.id,
-        patientName: patientName,
-        price: amount,
       );
 
       if (mounted) {

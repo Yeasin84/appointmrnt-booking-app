@@ -33,7 +33,8 @@ returns table (
   latitude double precision,
   longitude double precision,
   dist_km double precision,
-  is_video_available boolean
+  is_video_available boolean,
+  weekly_schedule jsonb -- ✅ Added schedule support
 )
 language plpgsql
 as $$
@@ -54,8 +55,10 @@ begin
         sin(radians(user_lat)) * sin(radians(p.latitude))
       )
     ) as dist_km,
-    p.is_video_available
+    p.is_video_available,
+    ds.weekly_schedule -- ✅ Added from join
   from profiles p
+  left join doctor_schedules ds on p.id = ds.doctor_id -- ✅ Joined for schedule
   where
     p.role = 'doctor'
     and p.latitude is not null
@@ -70,3 +73,4 @@ begin
   order by dist_km asc;
 end;
 $$;
+

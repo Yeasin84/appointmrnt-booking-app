@@ -110,6 +110,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
         // Refresh to ensure sync
         await _refreshProfile();
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update: ${e.toString()}'),
@@ -330,8 +331,8 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: isVideoCallAvailable
-                                ? const Color(0xFF1664CD).withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
+                                ? const Color(0xFF1664CD).withValues(alpha: 0.1)
+                                : Colors.red.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isVideoCallAvailable
@@ -374,9 +375,11 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                           activeThumbColor: const Color(0xFF1664CD),
                           activeTrackColor: const Color(
                             0xFF1664CD,
-                          ).withOpacity(0.3),
+                          ).withValues(alpha: 0.3),
                           inactiveThumbColor: Colors.grey.shade400,
-                          inactiveTrackColor: Colors.grey.withOpacity(0.2),
+                          inactiveTrackColor: Colors.grey.withValues(
+                            alpha: 0.2,
+                          ),
                         ),
                       ],
                     ),
@@ -414,9 +417,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                     trailing: Text(
                       currentLocale.languageCode == 'en'
                           ? l10n.english
-                          : currentLocale.languageCode == 'ar'
-                          ? l10n.arabic
-                          : l10n.french,
+                          : l10n.bangla,
                       style: const TextStyle(
                         color: Color(0xFF1664CD),
                         fontWeight: FontWeight.bold,
@@ -443,35 +444,18 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                               ),
                               ListTile(
                                 leading: const Text(
-                                  'ع',
+                                  'অ',
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                title: Text(l10n.arabic),
-                                selected: currentLocale.languageCode == 'ar',
+                                title: Text(l10n.bangla),
+                                selected: currentLocale.languageCode == 'bn',
                                 onTap: () {
                                   ref
                                       .read(localeProvider.notifier)
-                                      .setLocale(const Locale('ar'));
-                                  Navigator.pop(context);
-                                },
-                              ),
-                              ListTile(
-                                leading: const Text(
-                                  'Fr',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                title: Text(l10n.french),
-                                selected: currentLocale.languageCode == 'fr',
-                                onTap: () {
-                                  ref
-                                      .read(localeProvider.notifier)
-                                      .setLocale(const Locale('fr'));
+                                      .setLocale(const Locale('bn'));
                                   Navigator.pop(context);
                                 },
                               ),

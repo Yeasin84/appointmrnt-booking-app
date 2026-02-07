@@ -1,19 +1,17 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:aroggyapath/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:aroggyapath/models/doctor_model.dart';
 import 'package:aroggyapath/models/dependent_model.dart';
 import 'package:aroggyapath/models/appointment_model.dart';
 import 'package:aroggyapath/providers/appointment_provider.dart';
 import 'package:aroggyapath/providers/dependent_provider.dart';
-import 'package:aroggyapath/utils/api_config.dart';
+import 'package:aroggyapath/services/appointment_service.dart';
+import 'package:aroggyapath/services/api_service.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'dart:io';
 
 class BookAppointmentScreen extends StatefulWidget {
   final dynamic doctor;
@@ -46,6 +44,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   List<TimeSlot> availableSlots = [];
 
   final ImagePicker _picker = ImagePicker();
+  final AppointmentService _appointmentService = AppointmentService();
 
   Doctor? get doctorObject {
     if (widget.doctor is Doctor) return widget.doctor as Doctor;
@@ -153,100 +152,33 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     setState(() => _isLoadingSlots = true);
 
     try {
-      final response = await _fetchFromBackend(date);
+      final dateStr = DateFormat('yyyy-MM-dd').format(date);
+      final response = await _appointmentService.getAvailableSlots(
+        doctorId: doctorId,
+        date: dateStr,
+      );
 
-      if (response != null && response['success'] == true) {
+      if (response['success'] == true) {
         final slotsData = response['data']['slots'] as List;
         final unbookedSlots = slotsData
             .map((slot) => TimeSlot.fromJson(slot))
             .where((slot) => slot.isBooked != true)
             .toList();
 
-        setState(() {
-          availableSlots = unbookedSlots;
-        });
+        if (mounted) {
+          setState(() {
+            availableSlots = unbookedSlots;
+          });
+        }
       } else {
-        _loadFromWeeklySchedule(date);
+        if (mounted) setState(() => availableSlots = []);
       }
     } catch (e) {
-      _loadFromWeeklySchedule(date);
+      debugPrint('Error fetching slots: $e');
+      if (mounted) setState(() => availableSlots = []);
     } finally {
-      setState(() => _isLoadingSlots = false);
+      if (mounted) setState(() => _isLoadingSlots = false);
     }
-  }
-
-  Future<Map<String, dynamic>?> _fetchFromBackend(DateTime date) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
-      final response = await http
-          .post(
-            Uri.parse(
-              '${ApiConfig.baseUrl}${ApiConfig.appointments}/available',
-            ),
-            headers: {
-              'Content-Type': 'application/json',
-              if (token != null) 'Authorization': 'Bearer $token',
-            },
-            body: json.encode({
-              'doctorId': doctorId,
-              'date': DateFormat('yyyy-MM-dd').format(date),
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      }
-    } catch (e) {
-      debugPrint('Backend exception: $e');
-    }
-    return null;
-  }
-
-  void _loadFromWeeklySchedule(DateTime date) {
-    final doctor = doctorObject;
-
-    if (doctor == null ||
-        doctor.weeklySchedule == null ||
-        doctor.weeklySchedule!.isEmpty) {
-      setState(() => availableSlots = []);
-      return;
-    }
-
-    final dayName = _getDayName(date);
-    WeeklySchedule? daySchedule;
-
-    for (var schedule in doctor.weeklySchedule!) {
-      if (schedule.day.toLowerCase() == dayName.toLowerCase() &&
-          schedule.isActive) {
-        daySchedule = schedule;
-        break;
-      }
-    }
-
-    if (daySchedule == null) {
-      setState(() => availableSlots = []);
-      return;
-    }
-
-    setState(() {
-      availableSlots = daySchedule!.slots;
-    });
-  }
-
-  String _getDayName(DateTime date) {
-    const dayNames = [
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-      'sunday',
-    ];
-    return dayNames[date.weekday - 1];
   }
 
   Future<void> _pickMedicalDocuments() async {
@@ -299,22 +231,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   // ✅ NEW: Handle reschedule
   Future<void> _handleReschedule() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
       // Cancel old appointment
-      final cancelResponse = await http.patch(
-        Uri.parse(
-          '${ApiConfig.baseUrl}${ApiConfig.appointments}/${widget.existingAppointment!.id}/status',
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'status': 'cancelled'}),
+      final cancelResponse = await _appointmentService.updateAppointmentStatus(
+        appointmentId: widget.existingAppointment!.id,
+        status: 'cancelled',
       );
 
-      if (cancelResponse.statusCode < 200 || cancelResponse.statusCode >= 300) {
+      if (cancelResponse['success'] != true) {
         throw Exception('Failed to cancel old appointment');
       }
 
@@ -360,19 +283,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   // ✅ NEW: Handle new appointment creation logic
   Future<void> _handleNewAppointment() async {
     try {
-      // 1. Prepare Request
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.appointments}'),
-      );
-
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-
-      // 2. Prepare Data Payload
+      // 1. Prepare Data
       String backendType = selectedType == "Physical Visit"
           ? "physical"
           : "video";
@@ -384,101 +295,93 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         bookedForPayload = {
           'type': 'dependent',
           'dependentId': selectedDependent!.id,
-          'dependentName': selectedDependent!.fullName, // Added for clarity
-          'relationship': selectedDependent!.relationship, // Added for clarity
+          'dependentName': selectedDependent!.fullName,
+          'relationship': selectedDependent!.relationship,
         };
       }
 
-      // 3. Add Fields
-      // Note: We send symptoms as a plain field. If backend logic relies on this being
-      // saved BEFORE file processing completes, compression helps by speeding up the request.
-      final fields = {
-        'doctorId': doctorId,
-        'appointmentType': backendType,
-        'date': DateFormat('yyyy-MM-dd').format(selectedDate!),
-        'time': selectedTimeSlot!.start,
-        'symptoms': _symptomsController.text.trim(),
-        'bookedFor': json.encode(bookedForPayload),
-      };
-
-      request.fields.addAll(fields);
-      debugPrint('📤 Sending Appointment Fields: $fields');
-
-      // 4. Compress & Add Medical Documents
+      // 2. Upload Medical Documents
+      List<String> uploadedDocs = [];
       if (_medicalDocuments.isNotEmpty) {
         debugPrint(
-          '📸 Compressing ${_medicalDocuments.length} medical documents...',
+          '📸 Uploading ${_medicalDocuments.length} medical documents...',
         );
-        for (var file in _medicalDocuments) {
-          final compressedFile = await _compressImage(file.path);
-          request.files.add(
-            await http.MultipartFile.fromPath(
-              'medicalDocuments',
-              compressedFile.path,
-              filename: '${DateTime.now().millisecondsSinceEpoch}.jpg',
-            ),
+        for (var xFile in _medicalDocuments) {
+          final compressedFile = await _compressImage(xFile.path);
+          final fileName =
+              '${DateTime.now().millisecondsSinceEpoch}_${xFile.name}';
+          final result = await ApiService.uploadFile(
+            bucket: 'appointments',
+            path: 'medical_docs/$fileName',
+            filePath: compressedFile.path,
           );
-        }
-      }
-
-      // 5. Compress & Add Payment Screenshot
-      if (selectedType == "Video Call" && _paymentScreenshot != null) {
-        debugPrint('📸 Compressing payment screenshot...');
-        final compressedFile = await _compressImage(_paymentScreenshot!.path);
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'paymentScreenshot',
-            compressedFile.path,
-            filename: 'payment_${DateTime.now().millisecondsSinceEpoch}.jpg',
-          ),
-        );
-      }
-
-      // 6. Send Request
-      debugPrint('🚀 Sending Multipart Request...');
-      final streamedResponse = await request.send().timeout(
-        const Duration(seconds: 60), // Increased timeout for uploads
-      );
-
-      final response = await http.Response.fromStream(streamedResponse);
-      debugPrint('📥 Response Code: ${response.statusCode}');
-      debugPrint('📥 Response Body: ${response.body}');
-
-      final jsonResponse = response.body.isNotEmpty
-          ? json.decode(response.body)
-          : {};
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        if (mounted) {
-          // Optimization: Trigger appointment fetch
-          context.read<AppointmentProvider>().fetchAppointments();
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(AppLocalizations.of(context)!.bookingSuccess),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pop(context);
+          if (result['success'] == true) {
+            uploadedDocs.add(result['url']);
           }
         }
+      }
+
+      // 3. Upload Payment Screenshot
+      String? paymentUrl;
+      if (selectedType == "Video Call" && _paymentScreenshot != null) {
+        debugPrint('📸 Uploading payment screenshot...');
+        final compressedFile = await _compressImage(_paymentScreenshot!.path);
+        final fileName =
+            'payment_${DateTime.now().millisecondsSinceEpoch}_${_paymentScreenshot!.name}';
+        final result = await ApiService.uploadFile(
+          bucket: 'appointments',
+          path: 'payments/$fileName',
+          filePath: compressedFile.path,
+        );
+        if (result['success'] == true) {
+          paymentUrl = result['url'];
+        }
+      }
+
+      // 4. Create Appointment via Service
+      final response = await _appointmentService.createAppointment(
+        doctorId: doctorId,
+        appointmentDate: DateFormat('yyyy-MM-dd').format(selectedDate!),
+        appointmentTime: selectedTimeSlot!.start,
+        appointmentType: backendType,
+        symptoms: _symptomsController.text.trim(),
+        bookedFor: bookedForPayload,
+        medicalDocuments: uploadedDocs,
+        paymentScreenshot: paymentUrl,
+      );
+
+      if (response['success'] == true) {
+        if (mounted) {
+          context.read<AppointmentProvider>().fetchAppointments();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.bookingSuccess),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
       } else {
-        final l10n = AppLocalizations.of(context)!;
-        String msg = jsonResponse['message'] ?? l10n.bookingFailed;
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(
+                response['message'] ??
+                    AppLocalizations.of(context)!.bookingFailed,
+              ),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
     } catch (e) {
       debugPrint('❌ Booking Exception: $e');
       if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.rescheduleFailed(e.toString())),
+            content: Text(
+              AppLocalizations.of(context)!.rescheduleFailed(e.toString()),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -667,7 +570,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                           Navigator.pushNamed(context, '/add-dependent').then((
                             _,
                           ) {
-                            context.read<DependentProvider>().fetchDependents();
+                            if (context.mounted) {
+                              context
+                                  .read<DependentProvider>()
+                                  .fetchDependents();
+                            }
                           });
                         },
                         icon: const Icon(
@@ -890,7 +797,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       borderRadius: BorderRadius.circular(16),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.04),
+          color: Colors.black.withValues(alpha: 0.04),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
@@ -962,7 +869,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF0D53C1).withOpacity(0.1)
+              ? const Color(0xFF0D53C1).withValues(alpha: 0.1)
               : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(

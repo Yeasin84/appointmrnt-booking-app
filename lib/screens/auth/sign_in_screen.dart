@@ -88,6 +88,7 @@ class _SignInScreenState extends State<SignInScreen> {
         debugPrint('✅ Login successful - Role: $userRole');
 
         if (userRole == widget.userType.toLowerCase()) {
+          if (!mounted) return;
           final l10n = AppLocalizations.of(context)!;
           _showSnackBar(l10n.welcomeBackUser(userName), isError: false);
 
@@ -118,6 +119,7 @@ class _SignInScreenState extends State<SignInScreen> {
           );
           if (mounted) setState(() => _isLoading = false);
           await ApiService.clearToken();
+          if (!mounted) return;
           final l10n = AppLocalizations.of(context)!;
           _showSnackBar(
             l10n.accountRegisteredAs(_capitalize(userRole ?? "user")),
@@ -126,15 +128,19 @@ class _SignInScreenState extends State<SignInScreen> {
         }
       } else {
         debugPrint('❌ Login failed: ${result['message']}');
-        if (mounted) setState(() => _isLoading = false);
-        final l10n = AppLocalizations.of(context)!;
-        _showSnackBar(result['message'] ?? l10n.loginFailed, isError: true);
+        if (mounted) {
+          setState(() => _isLoading = false);
+          final l10n = AppLocalizations.of(context)!;
+          _showSnackBar(result['message'] ?? l10n.loginFailed, isError: true);
+        }
       }
     } catch (e) {
       debugPrint('❌ Login error: $e');
-      if (mounted) setState(() => _isLoading = false);
-      final l10n = AppLocalizations.of(context)!;
-      _showSnackBar(l10n.connectionError, isError: true);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        final l10n = AppLocalizations.of(context)!;
+        _showSnackBar(l10n.connectionError, isError: true);
+      }
     }
   }
 

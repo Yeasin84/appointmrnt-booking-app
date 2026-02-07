@@ -126,11 +126,13 @@ class ApiService {
       };
 
       if (role.toLowerCase() == 'doctor') {
-        if (medicalLicenseNumber != null)
+        if (medicalLicenseNumber != null) {
           userMetadata['medicalLicenseNumber'] = medicalLicenseNumber;
+        }
         if (specialty != null) userMetadata['specialty'] = specialty;
-        if (experienceYears != null)
+        if (experienceYears != null) {
           userMetadata['experienceYears'] = experienceYears;
+        }
         if (referralCode != null) userMetadata['referralCode'] = referralCode;
       }
 
@@ -232,6 +234,19 @@ class ApiService {
           .order('updated_at', ascending: false);
 
       return {'success': true, 'data': data};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteConversation(String chatId) async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return {'success': false, 'message': 'Not logged in'};
+
+      await supabase.from('chats').delete().eq('id', chatId);
+
+      return {'success': true};
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
@@ -341,16 +356,32 @@ class ApiService {
   static Future<Map<String, dynamic>> getUserProfile({String? userId}) async {
     try {
       final targetId = userId ?? supabase.auth.currentUser?.id;
-      if (targetId == null)
+      if (targetId == null) {
         return {'success': false, 'message': 'Not logged in'};
+      }
+
+      // ✅ Fetch profile and join with doctor_schedules table
       final data = await supabase
           .from('profiles')
-          .select()
+          .select('*, doctor_schedules(weekly_schedule)')
           .eq('id', targetId)
           .single();
+
       return {'success': true, 'data': data};
     } catch (e) {
-      return {'success': false, 'message': e.toString()};
+      debugPrint('⚠️ Fetch profile with join failed: $e');
+      // Fallback to simple fetch if join fails (e.g. table not created yet)
+      try {
+        final targetId = userId ?? supabase.auth.currentUser?.id;
+        final data = await supabase
+            .from('profiles')
+            .select()
+            .eq('id', targetId!)
+            .single();
+        return {'success': true, 'data': data};
+      } catch (e2) {
+        return {'success': false, 'message': e2.toString()};
+      }
     }
   }
 
@@ -368,6 +399,28 @@ class ApiService {
           .single();
       return {'success': true, 'data': updated};
     } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// ✅ NEW: Manage doctor schedule in separate table
+  static Future<Map<String, dynamic>> upsertDoctorSchedule({
+    required List<Map<String, dynamic>> weeklySchedule,
+  }) async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return {'success': false, 'message': 'Not logged in'};
+
+      debugPrint('🕒 Upserting schedule for $userId');
+      await supabase.from('doctor_schedules').upsert({
+        'doctor_id': userId,
+        'weekly_schedule': weeklySchedule,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      return {'success': true};
+    } catch (e) {
+      debugPrint('❌ Upsert schedule failed: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -463,7 +516,11 @@ class ApiService {
     try {
       final from = (page - 1) * limit;
       final to = from + limit - 1;
-      var query = supabase.from('profiles').select().eq('role', 'doctor');
+      var query = supabase
+          .from('profiles')
+          .select('*, doctor_schedules(weekly_schedule)')
+          .eq('role', 'doctor');
+
       if (specialty != null && specialty.isNotEmpty) {
         query = query.eq('specialty', specialty);
       }
@@ -480,9 +537,10 @@ class ApiService {
     try {
       final data = await supabase
           .from('profiles')
-          .select()
+          .select('*, doctor_schedules(weekly_schedule)')
           .eq('id', doctorId)
           .single();
+
       return {'success': true, 'data': data};
     } catch (e) {
       return {'success': false, 'message': e.toString()};
@@ -726,18 +784,31 @@ class ApiService {
 
   static Future<Map<String, dynamic>> uploadFile({
     required String filePath,
-    required String fieldName,
+    String? fieldName, // Kept for legacy compatibility
+    String? path, // Custom path in bucket
     String bucket = 'uploads',
   }) async {
     try {
       final file = File(filePath);
       final fileName =
           '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-      final path = 'general/$fileName';
-      await supabase.storage.from(bucket).upload(path, file);
-      final url = supabase.storage.from(bucket).getPublicUrl(path);
+      final uploadPath = path ?? 'general/$fileName';
+
+      debugPrint('📤 Uploading to Supabase Storage ($bucket): $uploadPath');
+
+      await supabase.storage
+          .from(bucket)
+          .uploadBinary(
+            uploadPath,
+            await file.readAsBytes(),
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      final url = supabase.storage.from(bucket).getPublicUrl(uploadPath);
+      debugPrint('✅ Upload successful: $url');
       return {'success': true, 'url': url};
     } catch (e) {
+      debugPrint('❌ Storage Upload Error: $e');
       return {'success': false, 'message': e.toString()};
     }
   }

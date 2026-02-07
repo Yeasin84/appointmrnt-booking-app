@@ -22,9 +22,12 @@ class NotificationModel {
       id: (json['_id'] ?? json['id'])?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       message: (json['content'] ?? json['message'])?.toString() ?? '',
-      time: (json['createdAt'] ?? json['time'])?.toString() ?? '',
+      time:
+          (json['created_at'] ?? json['createdAt'] ?? json['time'])
+              ?.toString() ??
+          '',
       type: json['type']?.toString() ?? 'general',
-      isRead: json['isRead'] ?? false,
+      isRead: json['is_read'] ?? json['isRead'] ?? false,
       meta: json['meta'] as Map<String, dynamic>?,
     );
   }

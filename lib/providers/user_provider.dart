@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/user_service.dart';
-import '../services/doctor_schedule_service.dart';
 
 class UserProvider with ChangeNotifier {
   UserModel? _user;
@@ -33,7 +32,7 @@ class UserProvider with ChangeNotifier {
         debugPrint('✅ Profile image: ${_user?.profileImage}');
         debugPrint('✅ Specialty: ${_user?.specialty}');
         debugPrint('✅ Bio: ${_user?.bio}');
-        print('✅ Video Call Available: ${_user?.isVideoCallAvailable}');
+        debugPrint('✅ Video Call Available: ${_user?.isVideoCallAvailable}');
         debugPrint(
           '✅ Location: lat=${_user?.latitude}, lng=${_user?.longitude}',
         );
@@ -42,7 +41,7 @@ class UserProvider with ChangeNotifier {
         return true;
       } else {
         _error = response['message'] ?? 'Failed to fetch profile';
-        print('❌ Profile fetch failed: $_error');
+        debugPrint('❌ Profile fetch failed: $_error');
         _isLoading = false;
         notifyListeners();
         return false;
@@ -64,34 +63,24 @@ class UserProvider with ChangeNotifier {
 
     try {
       debugPrint(
-        '📤 Updating video call availability via Schedule Service: $isAvailable',
+        '📤 Updating video call availability via User Service: $isAvailable',
       );
 
-      // ✅ ENSURE PERSISTENCE: Use DoctorScheduleService which is known to work
-      // with this specific combination of fields.
-      final scheduleService = DoctorScheduleService();
-
-      final currentFees = _user?.fees ?? {'amount': 0, 'currency': 'USD'};
-      final currentSchedule =
-          _user?.weeklySchedule?.map((d) => d.toJson()).toList() ?? [];
-
-      final response = await scheduleService.saveWeeklySchedule(
-        weeklySchedule: currentSchedule,
-        fees: currentFees,
+      // ✅ Use standardized UserService instead of deprecated DoctorScheduleService
+      final response = await UserService.updateUserProfile(
         isVideoCallAvailable: isAvailable,
-        isAvailable: isAvailable, // ✅ Send redundant field
       );
 
       if (response['success'] == true) {
         debugPrint('✅ Server confirmed update. Refreshing profile...');
 
-        // Patch locally immediately so the UI reflects it even if refresh returns stale data
+        // Patch locally immediately so the UI reflects it
         if (_user != null) {
           _user = _user!.copyWith(isVideoCallAvailable: isAvailable);
           notifyListeners();
         }
 
-        // Force refresh from server to see what it actually stored
+        // Refresh from server to ensure sync
         await fetchUserProfile();
 
         // ⚠️ FINAL PATCH: If server STILL returned stale data, force our intent
@@ -233,7 +222,7 @@ class UserProvider with ChangeNotifier {
         debugPrint(
           '   - Location: lat=${_user?.latitude}, lng=${_user?.longitude}',
         );
-        print('   - Video Call: ${_user?.isVideoCallAvailable}'); // ✅ NEW
+        debugPrint('   - Video Call: ${_user?.isVideoCallAvailable}'); // ✅ NEW
         debugPrint('   - New avatar: ${_user?.profileImage}');
         _isLoading = false;
         notifyListeners();

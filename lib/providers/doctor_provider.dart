@@ -19,41 +19,43 @@ class DoctorProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      print('📡 Fetching doctors from API...');
+      debugPrint('📡 Fetching doctors from API...');
       final response = await _doctorService.getNearbyDoctors(
         lat: lat,
         lng: lng,
       );
 
-      print('📥 API Response:');
-      print('   - Success: ${response['success']}');
-      print('   - Data count: ${(response['data'] as List?)?.length ?? 0}');
+      debugPrint('📥 API Response:');
+      debugPrint('   - Success: ${response['success']}');
+      debugPrint(
+        '   - Data count: ${(response['data'] as List?)?.length ?? 0}',
+      );
 
       if (response['success'] == true) {
         final List<dynamic> data = response['data'] ?? [];
 
-        print('✅ Fetched ${data.length} doctors raw data');
+        debugPrint('✅ Fetched ${data.length} doctors raw data');
 
         // Parse to Doctor objects
         _nearbyDoctors = data.map((json) => Doctor.fromJson(json)).toList();
 
-        print('✅ Successfully parsed ${_nearbyDoctors.length} doctors');
+        debugPrint('✅ Successfully parsed ${_nearbyDoctors.length} doctors');
 
         _isLoading = false;
         notifyListeners();
         return true;
       } else {
         _error = response['message'] ?? 'Failed to fetch doctors';
-        print('❌ API Error: $_error');
+        debugPrint('❌ API Error: $_error');
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e, stackTrace) {
       _error = 'Error: $e';
-      print('❌ Exception in fetchNearbyDoctors:');
-      print('   Error: $e');
-      print('   StackTrace: $stackTrace');
+      debugPrint('❌ Exception in fetchNearbyDoctors:');
+      debugPrint('   Error: $e');
+      debugPrint('   StackTrace: $stackTrace');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -61,7 +63,7 @@ class DoctorProvider with ChangeNotifier {
   }
 
   void clearDoctors() {
-    print('🗑️ Clearing doctors list');
+    debugPrint('🗑️ Clearing doctors list');
     _nearbyDoctors = [];
     _error = null;
     _isLoading = false;

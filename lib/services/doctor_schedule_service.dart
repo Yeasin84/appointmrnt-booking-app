@@ -22,11 +22,11 @@ class DoctorScheduleService {
         'isAvailable': isAvailable, // ✅ Redundant key 2
       };
 
-      print('📤 Sending to backend:');
-      print('   - weeklySchedule: ${weeklySchedule.length} days');
-      print('   - fees: $fees');
-      print('   - isVideoCallAvailable: $isVideoCallAvailable');
-      print('   - isAvailable: $isAvailable');
+      debugPrint('📤 Sending to backend:');
+      debugPrint('   - weeklySchedule: ${weeklySchedule.length} days');
+      debugPrint('   - fees: $fees');
+      debugPrint('   - isVideoCallAvailable: $isVideoCallAvailable');
+      debugPrint('   - isAvailable: $isAvailable');
 
       final response = await ApiService.put(
         '/api/v1/user/profile',

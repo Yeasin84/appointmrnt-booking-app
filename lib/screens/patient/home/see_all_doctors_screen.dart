@@ -44,9 +44,11 @@ class _SeeAllDoctorsScreenState extends State<SeeAllDoctorsScreen> {
         setState(() {
           _doctors = doctorsData.map((json) {
             // Debug log
-            print('🔍 Doctor: ${json['fullName']}');
-            print('   - isVideoCallAvailable: ${json['isVideoCallAvailable']}');
-            print('   - weeklySchedule: ${json['weeklySchedule']}');
+            debugPrint('🔍 Doctor: ${json['fullName']}');
+            debugPrint(
+              '   - isVideoCallAvailable: ${json['isVideoCallAvailable']}',
+            );
+            debugPrint('   - weeklySchedule: ${json['weeklySchedule']}');
 
             return Doctor.fromJson(json);
           }).toList();
@@ -72,23 +74,23 @@ class _SeeAllDoctorsScreenState extends State<SeeAllDoctorsScreen> {
   /// ✅ Check if doctor has schedule (is available)
   bool _isDoctorAvailable(Doctor doctor) {
     if (doctor.weeklySchedule == null || doctor.weeklySchedule!.isEmpty) {
-      print('❌ ${doctor.fullName}: No weeklySchedule');
+      debugPrint('❌ ${doctor.fullName}: No weeklySchedule');
       return false;
     }
 
     // Check if at least one day is active with slots
     for (var schedule in doctor.weeklySchedule!) {
-      print(
+      debugPrint(
         '📅 ${doctor.fullName} - ${schedule.day}: active=${schedule.isActive}, slots=${schedule.slots.length}',
       );
 
       if (schedule.isActive && schedule.slots.isNotEmpty) {
-        print('✅ ${doctor.fullName}: Available on ${schedule.day}');
+        debugPrint('✅ ${doctor.fullName}: Available on ${schedule.day}');
         return true;
       }
     }
 
-    print('❌ ${doctor.fullName}: No active days with slots');
+    debugPrint('❌ ${doctor.fullName}: No active days with slots');
     return false;
   }
 
@@ -221,8 +223,8 @@ class _SeeAllDoctorsScreenState extends State<SeeAllDoctorsScreen> {
     final String visitingHours = _getVisitingHours(doctor);
 
     // Debug
-    print('📋 See All: ${doctor.fullName}');
-    print('   - hasVideoCall: $hasVideoCall');
+    debugPrint('📋 See All: ${doctor.fullName}');
+    debugPrint('   - hasVideoCall: $hasVideoCall');
 
     return GestureDetector(
       onTap: () {
@@ -241,7 +243,7 @@ class _SeeAllDoctorsScreenState extends State<SeeAllDoctorsScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -259,24 +261,26 @@ class _SeeAllDoctorsScreenState extends State<SeeAllDoctorsScreen> {
                           height: 70,
                           width: 70,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 70,
-                            width: 70,
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.person, size: 40),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                height: 70,
+                                width: 70,
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.person, size: 40),
+                              ),
                         )
                       : Image.asset(
                           doctor.image,
                           height: 70,
                           width: 70,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 70,
-                            width: 70,
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.person, size: 40),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                height: 70,
+                                width: 70,
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.person, size: 40),
+                              ),
                         ),
                 ),
                 const SizedBox(width: 16),

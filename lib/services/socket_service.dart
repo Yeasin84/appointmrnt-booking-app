@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'package:realtime_client/realtime_client.dart';
 
 class SocketService {
   static SocketService? _instance;
@@ -131,7 +130,7 @@ class SocketService {
       // Note: triggerBroadcast sends to everyone subscribed to the channel.
       // Since the target subscribes to 'user_v1:{targetId}', we send there.
 
-      await targetChannel.subscribe();
+      targetChannel.subscribe();
 
       // Small delay to ensure connection if not exists?
       // Actually Supabase SDK usually handles this, or we can just send.

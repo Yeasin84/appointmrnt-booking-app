@@ -218,7 +218,10 @@ class _EarningOverviewScreenState extends State<EarningOverviewScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+              ),
             ],
             border: Border.all(color: Colors.green.shade200, width: 1),
           ),
@@ -300,7 +303,7 @@ class _EarningOverviewScreenState extends State<EarningOverviewScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 15,
                 ),
               ],
@@ -367,7 +370,7 @@ class _EarningOverviewScreenState extends State<EarningOverviewScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 5),
         ],
       ),
       child: Column(

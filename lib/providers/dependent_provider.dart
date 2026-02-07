@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:aroggyapath/models/dependent_model.dart';
-import 'package:aroggyapath/utils/api_config.dart';
+import 'package:aroggyapath/services/dependent_service.dart';
 
 class DependentProvider with ChangeNotifier {
+  final DependentService _dependentService = DependentService();
   List<DependentModel> _dependents = [];
   bool _isLoading = false;
   String? _error;
@@ -26,40 +24,17 @@ class DependentProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
+      final response = await _dependentService.getMyDependents();
 
-      if (token == null) {
-        throw Exception('Not authenticated');
-      }
+      if (response['success'] == true) {
+        final List<dynamic> dependentsJson = response['data'] ?? [];
+        _dependents = dependentsJson
+            .map((json) => DependentModel.fromJson(json))
+            .toList();
 
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.dependents}'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      debugPrint('📥 Fetch Dependents Response: ${response.statusCode}');
-      debugPrint('📥 Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['success'] == true) {
-          final List<dynamic> dependentsJson = data['data'] ?? [];
-          _dependents = dependentsJson
-              .map((json) => DependentModel.fromJson(json))
-              .toList();
-
-          debugPrint('✅ Loaded ${_dependents.length} dependents');
-        } else {
-          throw Exception(data['message'] ?? 'Failed to load dependents');
-        }
+        debugPrint('✅ Loaded ${_dependents.length} dependents');
       } else {
-        final data = json.decode(response.body);
-        throw Exception(data['message'] ?? 'Failed to load dependents');
+        throw Exception(response['message'] ?? 'Failed to load dependents');
       }
     } catch (e) {
       debugPrint('❌ Error fetching dependents: $e');
@@ -80,61 +55,34 @@ class DependentProvider with ChangeNotifier {
     String? notes,
   }) async {
     _error = null;
+    _isLoading = true;
+    notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
-      if (token == null) {
-        throw Exception('Not authenticated');
-      }
-
-      final body = {
-        'fullName': fullName,
-        'relationship': relationship,
-        'dob': dob.toIso8601String(),
-        'gender': gender,
-        if (phone != null && phone.isNotEmpty) 'phone': phone,
-        if (notes != null && notes.isNotEmpty) 'notes': notes,
-      };
-
-      debugPrint('📤 Creating dependent: $body');
-
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.dependents}'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(body),
+      final response = await _dependentService.createDependent(
+        fullName: fullName,
+        relationship: relationship,
+        dob: dob,
+        gender: gender,
+        phone: phone,
+        notes: notes,
       );
 
-      debugPrint('📥 Create Response: ${response.statusCode}');
-      debugPrint('📥 Response Body: ${response.body}');
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['success'] == true) {
-          // Refresh the list
-          await fetchDependents();
-          return true;
-        } else {
-          _error = data['message'] ?? 'Failed to create dependent';
-          notifyListeners();
-          return false;
-        }
+      if (response['success'] == true) {
+        // Refresh the list
+        await fetchDependents();
+        return true;
       } else {
-        final data = json.decode(response.body);
-        _error = data['message'] ?? 'Failed to create dependent';
-        notifyListeners();
+        _error = response['message'] ?? 'Failed to create dependent';
         return false;
       }
     } catch (e) {
       debugPrint('❌ Error creating dependent: $e');
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -150,118 +98,63 @@ class DependentProvider with ChangeNotifier {
     bool? isActive,
   }) async {
     _error = null;
+    _isLoading = true;
+    notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
-      if (token == null) {
-        throw Exception('Not authenticated');
-      }
-
-      final body = <String, dynamic>{};
-      if (fullName != null) body['fullName'] = fullName;
-      if (relationship != null) body['relationship'] = relationship;
-      if (dob != null) body['dob'] = dob.toIso8601String();
-      if (gender != null) body['gender'] = gender;
-      if (phone != null) body['phone'] = phone;
-      if (notes != null) body['notes'] = notes;
-      if (isActive != null) body['isActive'] = isActive;
-
-      debugPrint('📤 Updating dependent $dependentId: $body');
-
-      final response = await http.patch(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.dependents}/$dependentId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(body),
+      final response = await _dependentService.updateDependent(
+        dependentId: dependentId,
+        fullName: fullName,
+        relationship: relationship,
+        dob: dob,
+        gender: gender,
+        phone: phone,
+        notes: notes,
+        isActive: isActive,
       );
 
-      debugPrint('📥 Update Response: ${response.statusCode}');
-      debugPrint('📥 Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['success'] == true) {
-          // Refresh the list
-          await fetchDependents();
-          return true;
-        } else {
-          _error = data['message'] ?? 'Failed to update dependent';
-          notifyListeners();
-          return false;
-        }
+      if (response['success'] == true) {
+        // Refresh the list
+        await fetchDependents();
+        return true;
       } else {
-        final data = json.decode(response.body);
-        _error = data['message'] ?? 'Failed to update dependent';
-        notifyListeners();
+        _error = response['message'] ?? 'Failed to update dependent';
         return false;
       }
     } catch (e) {
       debugPrint('❌ Error updating dependent: $e');
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  // ✅ DELETE DEPENDENT (with error handling for active appointments)
+  // ✅ DELETE DEPENDENT
   Future<bool> deleteDependent(String dependentId) async {
     _error = null;
+    _isLoading = true;
+    notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
+      final response = await _dependentService.deleteDependent(dependentId);
 
-      if (token == null) {
-        throw Exception('Not authenticated');
-      }
-
-      debugPrint('🗑️ Deleting dependent: $dependentId');
-
-      final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.dependents}/$dependentId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      debugPrint('📥 Delete Response: ${response.statusCode}');
-      debugPrint('📥 Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['success'] == true) {
-          // Remove from local list
-          _dependents.removeWhere((dep) => dep.id == dependentId);
-          notifyListeners();
-          return true;
-        } else {
-          _error = data['message'] ?? 'Failed to delete dependent';
-          notifyListeners();
-          return false;
-        }
+      if (response['success'] == true) {
+        // Remove from local list
+        _dependents.removeWhere((dep) => dep.id == dependentId);
+        return true;
       } else {
-        // ✅ Parse error message from backend
-        try {
-          final data = json.decode(response.body);
-          _error = data['message'] ?? 'Failed to delete dependent';
-        } catch (e) {
-          _error = 'Failed to delete dependent';
-        }
-        notifyListeners();
+        _error = response['message'] ?? 'Failed to delete dependent';
         return false;
       }
     } catch (e) {
       debugPrint('❌ Error deleting dependent: $e');
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

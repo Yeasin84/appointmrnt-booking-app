@@ -282,7 +282,7 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -498,67 +498,65 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
     try {
       final success = await provider.cancelAppointment(appointment.id);
 
-      if (mounted) Navigator.pop(context);
+      if (!context.mounted) return;
+      Navigator.pop(context);
 
+      if (!context.mounted) return;
       if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Appointment cancelled successfully',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
-          provider.fetchAppointments();
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      provider.error ?? l10n.failedCancel,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) Navigator.pop(context);
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Appointment cancelled successfully',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        provider.fetchAppointments();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    provider.error ?? l10n.failedCancel,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
       }
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -580,7 +578,9 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
         ),
       ),
     ).then((_) {
-      context.read<AppointmentProvider>().fetchAppointments();
+      if (context.mounted) {
+        context.read<AppointmentProvider>().fetchAppointments();
+      }
     });
   }
 
@@ -613,11 +613,11 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
 
         if (thisReview != null) {
           selectedRating = thisReview['rating'] ?? 0;
-          print('✅ Found existing review with rating: $selectedRating');
+          debugPrint('✅ Found existing review with rating: $selectedRating');
         }
       }
     } catch (e) {
-      print('⚠️ No existing review found: $e');
+      debugPrint('⚠️ No existing review found: $e');
     } finally {
       isLoadingExisting = false;
     }
@@ -764,10 +764,10 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
     Overlay.of(context).insert(overlay);
 
     try {
-      print('📤 Submitting review:');
-      print('   - Doctor ID: ${appointment.doctorId}');
-      print('   - Appointment ID: ${appointment.id}');
-      print('   - Rating: $rating');
+      debugPrint('📤 Submitting review:');
+      debugPrint('   - Doctor ID: ${appointment.doctorId}');
+      debugPrint('   - Appointment ID: ${appointment.id}');
+      debugPrint('   - Rating: $rating');
 
       final response =
           await ApiService.post('/api/v1/doctor-review', {
@@ -779,7 +779,7 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
             onTimeout: () => throw Exception('Request timeout'),
           );
 
-      print('📥 Review Response: $response');
+      debugPrint('📥 Review Response: $response');
 
       // ✅ Remove overlay
       overlay.remove();
@@ -810,7 +810,7 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
         }
       }
     } catch (e) {
-      print('❌ Review submission error: $e');
+      debugPrint('❌ Review submission error: $e');
 
       // ✅ Remove overlay on error
       overlay.remove();
