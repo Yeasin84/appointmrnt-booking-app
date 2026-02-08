@@ -4,6 +4,7 @@ import 'package:photo_view/photo_view_gallery.dart';
 import 'package:gal/gal.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:path_provider/path_provider.dart';
 
 class FullScreenImageViewer extends StatefulWidget {
@@ -86,8 +87,10 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -112,7 +115,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
           ImageProvider imageProvider;
 
           if (url.startsWith('http')) {
-            imageProvider = NetworkImage(url);
+            imageProvider = CachedNetworkImageProvider(url);
           } else {
             imageProvider = FileImage(File(url));
           }
@@ -128,9 +131,10 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
         itemCount: widget.imageUrls.length,
         loadingBuilder: (context, event) => Center(
           child: SizedBox(
-            width: 20.0,
-            height: 20.0,
+            width: 30.0,
+            height: 30.0,
             child: CircularProgressIndicator(
+              color: Colors.white70,
               value: event == null
                   ? 0
                   : event.cumulativeBytesLoaded /

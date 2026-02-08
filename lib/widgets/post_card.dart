@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aroggyapath/l10n/app_localizations.dart';
+import 'package:aroggyapath/widgets/full_screen_image_viewer.dart';
 import 'package:aroggyapath/models/post_model.dart';
 import 'package:aroggyapath/services/api_service.dart';
 import 'package:video_player/video_player.dart';
@@ -601,13 +602,28 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
+  void _openImageViewer(List<PostMedia> media, int index) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullScreenImageViewer(
+          imageUrls: media.map((m) => m.url).toList(),
+          initialIndex: index,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSingleImage(PostMedia image) {
-    return ClipRRect(
-      child: CustomImage(
-        imageUrl: image.url,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        height: 200,
+    return GestureDetector(
+      onTap: () => _openImageViewer([image], 0),
+      child: ClipRRect(
+        child: CustomImage(
+          imageUrl: image.url,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          height: 200,
+        ),
       ),
     );
   }
@@ -615,21 +631,36 @@ class _PostCardState extends State<PostCard> {
   Widget _buildMultipleImages(List<PostMedia> images) {
     if (images.length == 2) {
       return Row(
-        children: images
-            .map(
-              (img) => Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(1),
-                  child: CustomImage(
-                    imageUrl: img.url,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(1),
+              child: GestureDetector(
+                onTap: () => _openImageViewer(images, 0),
+                child: CustomImage(
+                  imageUrl: images[0].url,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                 ),
               ),
-            )
-            .toList(),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(1),
+              child: GestureDetector(
+                onTap: () => _openImageViewer(images, 1),
+                child: CustomImage(
+                  imageUrl: images[1].url,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
@@ -641,34 +672,41 @@ class _PostCardState extends State<PostCard> {
       List<Widget> rowItems = [];
 
       for (int j = i; j < end; j++) {
+        final int index = j;
         Widget item;
         if (j == 5 && images.length > 6) {
-          item = Stack(
-            fit: StackFit.expand,
-            children: [
-              CustomImage(
-                imageUrl: images[j].url,
-                fit: BoxFit.cover,
-                height: double.infinity,
-                width: double.infinity,
-              ),
-              Container(
-                color: Colors.black54,
-                child: Center(
-                  child: Text(
-                    '+${images.length - 6}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+          item = GestureDetector(
+            onTap: () => _openImageViewer(images, index),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CustomImage(
+                  imageUrl: images[j].url,
+                  fit: BoxFit.cover,
+                  height: double.infinity,
+                  width: double.infinity,
+                ),
+                Container(
+                  color: Colors.black54,
+                  child: Center(
+                    child: Text(
+                      '+${images.length - 6}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         } else {
-          item = CustomImage(imageUrl: images[j].url, fit: BoxFit.cover);
+          item = GestureDetector(
+            onTap: () => _openImageViewer(images, index),
+            child: CustomImage(imageUrl: images[j].url, fit: BoxFit.cover),
+          );
         }
 
         rowItems.add(

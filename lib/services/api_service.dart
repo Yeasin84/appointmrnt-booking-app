@@ -703,9 +703,14 @@ class ApiService {
       final userId = supabase.auth.currentUser?.id;
       List<Map<String, dynamic>> mediaList = [];
 
+      debugPrint(
+        '📝 createPost called with ${mediaFiles?.length ?? 0} media files',
+      );
+
       // 1. Upload files to Storage if present
       if (mediaFiles != null && mediaFiles.isNotEmpty) {
         for (final file in mediaFiles) {
+          debugPrint('📸 Attempting to upload: ${file.path}');
           final uploadResult = await uploadFile(
             filePath: file.path,
             bucket: 'chat-attachments', // Use verified existing bucket
@@ -726,15 +731,25 @@ class ApiService {
               'resourceType': isVideo ? 'video' : 'image',
               'mimeType': isVideo ? 'video/mp4' : 'image/jpeg',
             });
+            debugPrint('✅ Uploaded and added: $url');
+          } else {
+            debugPrint(
+              '❌ Upload failed for ${file.path}: ${uploadResult['message']}',
+            );
           }
         }
       }
+
+      debugPrint('📊 mediaList size: ${mediaList.length}');
 
       // 2. Insert post - Try with 'media_urls' first (Verified schema)
       try {
         final List<String> urls = mediaList
             .map((m) => m['url'] as String)
             .toList();
+
+        debugPrint('🚀 Inserting post with media_urls: $urls');
+
         final data = await supabase
             .from('posts')
             .insert({
@@ -1023,12 +1038,29 @@ class ApiService {
 
       debugPrint('📤 Uploading to Supabase Storage ($bucket): $uploadPath');
 
+      // ✅ Explicitly detect content type
+      final bytes = await file.readAsBytes();
+      final ext = file.path.split('.').last.toLowerCase();
+      String contentType = 'application/octet-stream';
+
+      if (['jpg', 'jpeg'].contains(ext)) {
+        contentType = 'image/jpeg';
+      } else if (ext == 'png') {
+        contentType = 'image/png';
+      } else if (ext == 'webp') {
+        contentType = 'image/webp';
+      } else if (ext == 'mp4') {
+        contentType = 'video/mp4';
+      } else if (ext == 'mov') {
+        contentType = 'video/quicktime';
+      }
+
       await supabase.storage
           .from(bucket)
           .uploadBinary(
             uploadPath,
-            await file.readAsBytes(),
-            fileOptions: const FileOptions(upsert: true),
+            bytes,
+            fileOptions: FileOptions(upsert: true, contentType: contentType),
           );
 
       final url = supabase.storage.from(bucket).getPublicUrl(uploadPath);
@@ -1036,6 +1068,33 @@ class ApiService {
       return {'success': true, 'url': url};
     } catch (e) {
       debugPrint('❌ Storage Upload Error: $e');
+
+      // ✅ SELF-HEAL: If bucket or folder is restricted/missing, try to create it if we have permissions
+      if (e.toString().contains('404') || e.toString().contains('403')) {
+        try {
+          debugPrint('🛠 Attempting to ensure bucket "$bucket" exists...');
+          // Try to create the bucket (will fail if it exists, which is fine)
+          try {
+            await supabase.storage.createBucket(
+              bucket,
+              const BucketOptions(public: true),
+            );
+            debugPrint('✅ Created missing bucket: $bucket');
+          } catch (_) {
+            // Already exists or no permission to create
+          }
+
+          // If it was a 404/403, maybe a retry will work now or give more info
+          debugPrint('📋 Available Storage Buckets:');
+          final buckets = await supabase.storage.listBuckets();
+          for (var b in buckets) {
+            debugPrint('   - ${b.name} (${b.public ? "public" : "private"})');
+          }
+        } catch (e2) {
+          debugPrint('📋 Diagnostic bucket check failed: $e2');
+        }
+      }
+
       return {'success': false, 'message': e.toString()};
     }
   }
