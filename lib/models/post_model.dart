@@ -26,15 +26,31 @@ class PostModel {
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
+    // ✅ Identify media source
+    List<PostMedia> mediaList = [];
+    if (json['media'] != null && json['media'] is List) {
+      mediaList = (json['media'] as List)
+          .map((m) => PostMedia.fromJson(m))
+          .toList();
+    } else if (json['media_urls'] != null && json['media_urls'] is List) {
+      mediaList = (json['media_urls'] as List).map((url) {
+        final urlStr = url.toString();
+        final isVideo =
+            urlStr.toLowerCase().contains('.mp4') ||
+            urlStr.toLowerCase().contains('.mov');
+        return PostMedia(
+          publicId: urlStr.split('/').last,
+          url: urlStr,
+          resourceType: isVideo ? 'video' : 'image',
+        );
+      }).toList();
+    }
+
     return PostModel(
       id: json['_id'] ?? json['id'] ?? '',
       content: json['content'] ?? '',
       author: PostAuthor.fromJson(json['author'] ?? {}),
-      media:
-          (json['media'] as List<dynamic>?)
-              ?.map((m) => PostMedia.fromJson(m))
-              .toList() ??
-          [],
+      media: mediaList,
       visibility: json['visibility'] ?? 'public',
       likesCount: json['likesCount'] ?? 0,
       commentsCount: json['commentsCount'] ?? 0,

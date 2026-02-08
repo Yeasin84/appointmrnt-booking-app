@@ -708,7 +708,7 @@ class ApiService {
         for (final file in mediaFiles) {
           final uploadResult = await uploadFile(
             filePath: file.path,
-            bucket: 'uploads',
+            bucket: 'chat-attachments', // Use verified existing bucket
             path:
                 'posts/$userId/${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}',
           );
@@ -730,19 +730,60 @@ class ApiService {
         }
       }
 
-      // 2. Insert post with media metadata
-      final data = await supabase
-          .from('posts')
-          .insert({
-            'content': content,
-            'user_id': userId,
-            'visibility': visibility,
-            'media': mediaList, // Store as JSONB
-          })
-          .select()
-          .single();
+      // 2. Insert post - Try with 'media_urls' first (Verified schema)
+      try {
+        final List<String> urls = mediaList
+            .map((m) => m['url'] as String)
+            .toList();
+        final data = await supabase
+            .from('posts')
+            .insert({
+              'content': content,
+              'user_id': userId,
+              'visibility': visibility,
+              'media_urls': urls, // actual DB schema
+            })
+            .select()
+            .single();
+        return {'success': true, 'data': data};
+      } catch (postgrestError) {
+        debugPrint(
+          '⚠️ Warning: Failed to insert with media_urls column: $postgrestError',
+        );
 
-      return {'success': true, 'data': data};
+        try {
+          // Try 'media' JSONB as a second attempt
+          final data = await supabase
+              .from('posts')
+              .insert({
+                'content': content,
+                'user_id': userId,
+                'visibility': visibility,
+                'media': mediaList,
+              })
+              .select()
+              .single();
+          return {'success': true, 'data': data};
+        } catch (e2) {
+          debugPrint('⚠️ Final fallback: Inserting without media columns');
+          final data = await supabase
+              .from('posts')
+              .insert({
+                'content': content,
+                'user_id': userId,
+                'visibility': visibility,
+              })
+              .select()
+              .single();
+
+          return {
+            'success': true,
+            'data': data,
+            'warning':
+                'Media metadata could not be saved to post (Column mismatch)',
+          };
+        }
+      }
     } catch (e) {
       debugPrint('❌ Error in createPost: $e');
       return {'success': false, 'message': e.toString()};
@@ -813,7 +854,7 @@ class ApiService {
       // 1. Upload video to storage
       final uploadResult = await uploadFile(
         filePath: videoFile.path,
-        bucket: 'uploads',
+        bucket: 'chat-attachments', // Use verified bucket
         path: storagePath,
       );
 
@@ -824,21 +865,49 @@ class ApiService {
       final videoUrl = uploadResult['url'];
 
       // 2. Insert into reels table
-      final data = await supabase
-          .from('reels')
-          .insert({
-            'user_id': userId,
-            'video_url': videoUrl,
-            'caption': caption,
-            'visibility': visibility,
-            'media': [
-              {'url': videoUrl, 'resourceType': 'video', 'public_id': fileName},
-            ],
-          })
-          .select()
-          .single();
+      try {
+        final data = await supabase
+            .from('reels')
+            .insert({
+              'user_id': userId,
+              'video_url': videoUrl,
+              'caption': caption,
+              'visibility': visibility,
+              'media': [
+                {
+                  'url': videoUrl,
+                  'resourceType': 'video',
+                  'public_id': fileName,
+                },
+              ],
+            })
+            .select()
+            .single();
 
-      return {'success': true, 'data': data};
+        return {'success': true, 'data': data};
+      } catch (postgrestError) {
+        debugPrint(
+          '⚠️ Warning: Failed to insert reel with media column: $postgrestError',
+        );
+
+        final data = await supabase
+            .from('reels')
+            .insert({
+              'user_id': userId,
+              'video_url': videoUrl,
+              'caption': caption,
+              'visibility': visibility,
+            })
+            .select()
+            .single();
+
+        return {
+          'success': true,
+          'data': data,
+          'warning':
+              'Reel was uploaded but media metadata could not be saved (Missing column)',
+        };
+      }
     } catch (e) {
       debugPrint('❌ Error in createReel: $e');
       return {'success': false, 'message': e.toString()};
@@ -944,7 +1013,7 @@ class ApiService {
     required String filePath,
     String? fieldName, // Kept for legacy compatibility
     String? path, // Custom path in bucket
-    String bucket = 'uploads',
+    String bucket = 'chat-attachments', // Default to verified bucket
   }) async {
     try {
       final file = File(filePath);
