@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart' as legacy_provider;
 import 'package:aroggyapath/l10n/app_localizations.dart';
 import 'package:aroggyapath/providers/user_provider.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class CreatePostBox extends StatelessWidget {
   final VoidCallback onNavigateToCreatePost;
@@ -19,9 +20,9 @@ class CreatePostBox extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.getSurface(context),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.02),
@@ -53,13 +54,13 @@ class CreatePostBox extends StatelessWidget {
                           vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F8FF),
+                          color: AppColors.getBackground(context),
                           borderRadius: BorderRadius.circular(25),
                         ),
                         child: Text(
                           l10n.shareInsights,
-                          style: const TextStyle(
-                            color: Colors.grey,
+                          style: TextStyle(
+                            color: AppColors.getTextSecondary(context),
                             fontSize: 13,
                           ),
                         ),
@@ -69,24 +70,27 @@ class CreatePostBox extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 15),
-              const Divider(height: 1, color: Color(0xFFF0F0F0)),
+              Divider(height: 1, color: AppColors.getBorder(context)),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildPostAction(
+                    context,
                     Icons.image_outlined,
                     l10n.photo,
                     Colors.brown,
                     onNavigateToCreatePost,
                   ),
                   _buildPostAction(
+                    context,
                     Icons.videocam_outlined,
                     l10n.video,
                     Colors.redAccent,
                     onNavigateToCreatePost,
                   ),
                   _buildPostAction(
+                    context,
                     Icons.play_circle_outline,
                     l10n.reels,
                     Colors.blueAccent,
@@ -102,12 +106,12 @@ class CreatePostBox extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF1664CD)),
+                        border: Border.all(color: AppColors.primary),
                       ),
                       child: Text(
                         l10n.createPost,
-                        style: const TextStyle(
-                          color: Color(0xFF1664CD),
+                        style: TextStyle(
+                          color: AppColors.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -124,6 +128,7 @@ class CreatePostBox extends StatelessWidget {
   }
 
   Widget _buildPostAction(
+    BuildContext context,
     IconData icon,
     String label,
     Color color,
@@ -137,7 +142,11 @@ class CreatePostBox extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.getTextPrimary(context),
+            ),
           ),
         ],
       ),

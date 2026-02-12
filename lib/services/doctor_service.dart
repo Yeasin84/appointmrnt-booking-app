@@ -60,11 +60,14 @@ class DoctorService {
 
   Future<Map<String, dynamic>> searchDoctors(String query) async {
     try {
+      debugPrint('🔍 Searching doctors with query: $query');
       final data = await Supabase.instance.client
           .from('profiles')
           .select('*, doctor_schedules(weekly_schedule)')
           .eq('role', 'doctor')
-          .ilike('full_name', '%$query%');
+          .or(
+            'full_name.ilike.%$query%,specialty.ilike.%$query%,address.ilike.%$query%,bio.ilike.%$query%',
+          );
 
       return {'success': true, 'data': data};
     } catch (e) {

@@ -46,7 +46,7 @@ class _PatientMainNavigationState extends ConsumerState<PatientMainNavigation> {
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.getSurface(context),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.08),
@@ -62,9 +62,25 @@ class _PatientMainNavigationState extends ConsumerState<PatientMainNavigation> {
               _currentIndex = index;
             });
           },
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.getSurface(context),
           indicatorColor: AppColors.primarySoft,
           elevation: 0,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          // ignore: deprecated_member_use
+          labelTextStyle: MaterialStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              );
+            }
+            return TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: AppColors.getTextSecondary(context),
+            );
+          }),
           destinations: [
             NavigationDestination(
               icon: const Icon(
@@ -138,7 +154,7 @@ class _PatientMainNavigationState extends ConsumerState<PatientMainNavigation> {
           children: [
             Icon(
               iconData,
-              size: 26,
+              size: 24,
               color: isSelected ? AppColors.primary : AppColors.textSecondary,
             ),
             if (unreadCount > 0)
@@ -151,7 +167,10 @@ class _PatientMainNavigationState extends ConsumerState<PatientMainNavigation> {
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(
+                      color: AppColors.getSurface(context),
+                      width: 2,
+                    ),
                   ),
                 ),
               ),

@@ -69,12 +69,12 @@ class CustomDoctorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.getSurface(context),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.getBorder(context)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withValues(alpha: 0.02),
+            color: AppColors.getTextPrimary(context).withValues(alpha: 0.02),
             blurRadius: 15,
             offset: const Offset(0, 6),
           ),
@@ -114,7 +114,7 @@ class CustomDoctorCard extends StatelessWidget {
                             doctor.fullName,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                              color: AppColors.getTextPrimary(context),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -203,7 +203,7 @@ class CustomDoctorCard extends StatelessWidget {
                           child: Text(
                             visitingHours,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: AppColors.getTextSecondary(context),
                               fontSize: 11,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -224,7 +224,7 @@ class CustomDoctorCard extends StatelessWidget {
                           ' ${doctor.rating.toStringAsFixed(1)} ',
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: AppColors.getTextPrimary(context),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -238,7 +238,7 @@ class CustomDoctorCard extends StatelessWidget {
                           child: Text(
                             distanceText,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: AppColors.getTextSecondary(context),
                             ),
                           ),
                         ),

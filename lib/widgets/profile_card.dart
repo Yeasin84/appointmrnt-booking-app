@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class ProfileCard extends StatelessWidget {
   final String title;
@@ -20,8 +21,11 @@ class ProfileCard extends StatelessWidget {
         width: 150,
         height: 180,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0B3267), Color(0xFF1664CD)],
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primary,
+              AppColors.primary.withValues(alpha: 0.7),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

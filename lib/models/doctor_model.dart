@@ -217,6 +217,50 @@ class Doctor {
         'weeklySchedule': weeklySchedule!.map((e) => e.toJson()).toList(),
     };
   }
+
+  Doctor copyWith({
+    String? id,
+    String? name,
+    String? fullName,
+    String? specialty,
+    String? image,
+    double? rating,
+    int? reviews,
+    String? experience,
+    String? location,
+    Map<String, dynamic>? fees,
+    List<WeeklySchedule>? weeklySchedule,
+    bool? isAvailable,
+    String? distance,
+    double? latitude,
+    double? longitude,
+    String? address,
+    String? bio,
+    bool? isVideoCallAvailable,
+    String? visitingHoursText,
+  }) {
+    return Doctor(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      fullName: fullName ?? this.fullName,
+      specialty: specialty ?? this.specialty,
+      image: image ?? this.image,
+      rating: rating ?? this.rating,
+      reviews: reviews ?? this.reviews,
+      experience: experience ?? this.experience,
+      location: location ?? this.location,
+      fees: fees ?? this.fees,
+      weeklySchedule: weeklySchedule ?? this.weeklySchedule,
+      isAvailable: isAvailable ?? this.isAvailable,
+      distance: distance ?? this.distance,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      address: address ?? this.address,
+      bio: bio ?? this.bio,
+      isVideoCallAvailable: isVideoCallAvailable ?? this.isVideoCallAvailable,
+      visitingHoursText: visitingHoursText ?? this.visitingHoursText,
+    );
+  }
 }
 
 class WeeklySchedule {

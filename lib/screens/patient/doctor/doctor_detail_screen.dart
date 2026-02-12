@@ -184,9 +184,25 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
 
                           const SizedBox(height: 6),
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.location_on, size: 16),
-                              Text(" ${widget.doctor.distance}"),
+                              const Icon(
+                                Icons.location_on,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  "${widget.doctor.location} (${widget.doctor.distance})",
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),

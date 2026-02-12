@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aroggyapath/providers/user_provider.dart';
 import 'package:aroggyapath/providers/notification_provider.dart';
+import 'package:aroggyapath/providers/theme_provider.dart';
 import 'package:aroggyapath/screens/patient/profile/patient_profile_screen.dart';
 import 'package:aroggyapath/screens/patient/notification/patient_notification_screen.dart';
 import 'package:aroggyapath/widgets/custom_image.dart';
@@ -89,6 +90,37 @@ class HomeHeader extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 12),
+          // Theme Toggle Button
+          GestureDetector(
+            onTap: () => ref.read(themeProvider.notifier).toggleTheme(),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.getSurface(context),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.getBorder(context)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.getTextPrimary(
+                      context,
+                    ).withValues(alpha: 0.03),
+                    spreadRadius: 0,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                ref.watch(themeProvider) == ThemeMode.dark
+                    ? Icons.light_mode_outlined
+                    : Icons.dark_mode_outlined,
+                size: 24,
+                color: AppColors.getTextPrimary(context),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Notification Button
           GestureDetector(
             onTap: () => Navigator.push(
               context,
@@ -97,12 +129,14 @@ class HomeHeader extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.getSurface(context),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: AppColors.getBorder(context)),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.textPrimary.withValues(alpha: 0.03),
+                    color: AppColors.getTextPrimary(
+                      context,
+                    ).withValues(alpha: 0.03),
                     spreadRadius: 0,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
@@ -112,10 +146,10 @@ class HomeHeader extends ConsumerWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.notifications_outlined,
                     size: 24,
-                    color: AppColors.textPrimary,
+                    color: AppColors.getTextPrimary(context),
                   ),
                   if (generalUnreadCountValue > 0)
                     Positioned(
@@ -127,7 +161,10 @@ class HomeHeader extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(
+                            color: AppColors.getSurface(context),
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),

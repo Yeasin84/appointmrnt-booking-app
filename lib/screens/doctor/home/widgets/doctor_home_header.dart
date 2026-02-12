@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart' as legacy_provider;
 import 'package:aroggyapath/providers/user_provider.dart';
 import 'package:aroggyapath/providers/notification_provider.dart';
+import 'package:aroggyapath/providers/theme_provider.dart';
 import 'package:aroggyapath/screens/doctor/home/notifications/doctor_notifications.dart';
 import 'package:aroggyapath/widgets/custom_image.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class DoctorHomeHeader extends ConsumerWidget {
   final VoidCallback onProfileTap;
@@ -23,8 +25,8 @@ class DoctorHomeHeader extends ConsumerWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF1664CD).withValues(alpha: 0.1),
-                Colors.white,
+                AppColors.primary.withValues(alpha: 0.1),
+                AppColors.getBackground(context),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -48,27 +50,42 @@ class DoctorHomeHeader extends ConsumerWidget {
                   children: [
                     Text(
                       user?.fullName ?? 'Doctor',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B2C49),
+                        color: AppColors.getTextPrimary(context),
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       user?.specialty ?? 'General Physician',
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.getTextSecondary(context),
+                      ),
                     ),
                   ],
                 ),
               ),
+              // Theme Toggle Button
+              IconButton(
+                icon: Icon(
+                  ref.watch(themeProvider) == ThemeMode.dark
+                      ? Icons.light_mode_outlined
+                      : Icons.dark_mode_outlined,
+                  color: AppColors.getTextPrimary(context),
+                  size: 24,
+                ),
+                onPressed: () => ref.read(themeProvider.notifier).toggleTheme(),
+              ),
+              // Notification Button
               Stack(
                 clipBehavior: Clip.none,
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.notifications_outlined,
-                      color: Color(0xFF1B2C49),
+                      color: AppColors.getTextPrimary(context),
                       size: 24,
                     ),
                     onPressed: () {

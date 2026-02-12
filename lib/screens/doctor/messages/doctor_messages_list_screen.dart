@@ -6,6 +6,7 @@ import 'package:aroggyapath/services/api_service.dart';
 
 import 'package:intl/intl.dart';
 import 'dart:async';
+import 'package:aroggyapath/utils/colors.dart';
 
 class DoctorMessagesListScreen extends StatefulWidget {
   final String? initialDoctorId;
@@ -319,17 +320,23 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
+      backgroundColor: AppColors.getBackground(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getSurface(context),
         elevation: 0,
         leading: _isSelectionMode
             ? IconButton(
-                icon: const Icon(Icons.close, color: Colors.black),
+                icon: Icon(
+                  Icons.close,
+                  color: AppColors.getTextPrimary(context),
+                ),
                 onPressed: _cancelSelection,
               )
             : IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: AppColors.getTextPrimary(context),
+                ),
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(
                     context,
@@ -344,8 +351,8 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
           _isSelectionMode
               ? "${_selectedConversationIds.length} selected"
               : AppLocalizations.of(context)!.messagesLabel,
-          style: const TextStyle(
-            color: Color(0xFF1B2C49),
+          style: TextStyle(
+            color: AppColors.getTextPrimary(context),
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -471,7 +478,9 @@ class _DoctorMessagesListScreenState extends State<DoctorMessagesListScreen>
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue[50] : Colors.white,
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : AppColors.getSurface(context),
           borderRadius: BorderRadius.circular(12),
           border: isSelected
               ? Border.all(color: Colors.blue.shade300)

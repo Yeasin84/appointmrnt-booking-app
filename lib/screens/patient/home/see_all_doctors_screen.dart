@@ -1,9 +1,11 @@
 // screens/patient/home/see_all_doctors_screen.dart
-// ✅ COMPLETE CODE with Real-time Availability & Video Badge & Visiting Hours
+// ✅ COMPLETE CODE with Real-time Availability & Video Badge & Visiting Hours using Provider & Search
 
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:aroggyapath/services/api_service.dart';
+import 'package:provider/provider.dart';
 import 'package:aroggyapath/models/doctor_model.dart';
+import 'package:aroggyapath/providers/doctor_provider.dart';
 import 'package:aroggyapath/screens/patient/doctor/doctor_detail_screen.dart';
 
 class SeeAllDoctorsScreen extends StatefulWidget {
@@ -14,83 +16,44 @@ class SeeAllDoctorsScreen extends StatefulWidget {
 }
 
 class _SeeAllDoctorsScreenState extends State<SeeAllDoctorsScreen> {
-  List<Doctor> _doctors = [];
-  bool _isLoading = true;
-  String? _errorMessage;
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _loadDoctors();
+    // Use addPostFrameCallback to avoid build-time errors
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DoctorProvider>().fetchAllDoctors();
+    });
   }
 
-  Future<void> _loadDoctors() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      context.read<DoctorProvider>().searchDoctors(query);
     });
-
-    try {
-      final result = await ApiService.get(
-        '/api/v1/user/role/doctor',
-        requiresAuth: true,
-      );
-
-      debugPrint('📥 Doctors API Response: $result');
-
-      if (result['success'] == true) {
-        final doctorsData = result['data'] as List? ?? [];
-
-        setState(() {
-          _doctors = doctorsData.map((json) {
-            // Debug log
-            debugPrint('🔍 Doctor: ${json['fullName']}');
-            debugPrint(
-              '   - isVideoCallAvailable: ${json['isVideoCallAvailable']}',
-            );
-            debugPrint('   - weeklySchedule: ${json['weeklySchedule']}');
-
-            return Doctor.fromJson(json);
-          }).toList();
-          _isLoading = false;
-        });
-
-        debugPrint('✅ Loaded ${_doctors.length} doctors');
-      } else {
-        setState(() {
-          _errorMessage = result['message'] ?? 'Failed to load doctors';
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ Error loading doctors: $e');
-      setState(() {
-        _errorMessage = 'Failed to load doctors: $e';
-        _isLoading = false;
-      });
-    }
   }
 
   /// ✅ Check if doctor has schedule (is available)
   bool _isDoctorAvailable(Doctor doctor) {
     if (doctor.weeklySchedule == null || doctor.weeklySchedule!.isEmpty) {
-      debugPrint('❌ ${doctor.fullName}: No weeklySchedule');
       return false;
     }
 
     // Check if at least one day is active with slots
     for (var schedule in doctor.weeklySchedule!) {
-      debugPrint(
-        '📅 ${doctor.fullName} - ${schedule.day}: active=${schedule.isActive}, slots=${schedule.slots.length}',
-      );
-
       if (schedule.isActive && schedule.slots.isNotEmpty) {
-        debugPrint('✅ ${doctor.fullName}: Available on ${schedule.day}');
         return true;
       }
     }
-
-    debugPrint('❌ ${doctor.fullName}: No active days with slots');
     return false;
   }
 
@@ -137,7 +100,7 @@ class _SeeAllDoctorsScreenState extends State<SeeAllDoctorsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "All Doctor's",
+          "All Doctors",
           style: TextStyle(
             color: Color(0xFF1B2C49),
             fontSize: 20,
@@ -145,86 +108,126 @@ class _SeeAllDoctorsScreenState extends State<SeeAllDoctorsScreen> {
           ),
         ),
       ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _loadDoctors,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1664CD),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
+      body: Column(
+        children: [
+          // 🔍 Search Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.white,
+            child: TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'Search by Name, Specialty, or Area...',
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                filled: true,
+                fillColor: const Color(0xFFF5F6FA),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_doctors.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.medical_services_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'No doctors available',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
-          ],
-        ),
-      );
-    }
+          ),
 
-    return RefreshIndicator(
-      onRefresh: _loadDoctors,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _doctors.length,
-        itemBuilder: (context, index) {
-          final doctor = _doctors[index];
-          return _buildDoctorCard(doctor);
-        },
+          // 📋 Doctor List
+          Expanded(
+            child: Consumer<DoctorProvider>(
+              builder: (context, doctorProvider, child) {
+                if (doctorProvider.isAllLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (doctorProvider.allError != null) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            doctorProvider.allError!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () => doctorProvider.fetchAllDoctors(),
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1664CD),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (doctorProvider.allDoctors.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchController.text.isNotEmpty
+                              ? 'No doctors found matching "${_searchController.text}"'
+                              : 'No doctors available',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () => doctorProvider.fetchAllDoctors(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: doctorProvider.allDoctors.length,
+                    itemBuilder: (context, index) {
+                      final doctor = doctorProvider.allDoctors[index];
+                      return _buildDoctorCard(doctor);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildDoctorCard(Doctor doctor) {
     final bool isAvailable = _isDoctorAvailable(doctor);
-    final bool hasVideoCall = doctor.isVideoCallAvailable; // ✅ Read from model
+    final bool hasVideoCall = doctor.isVideoCallAvailable;
     final String visitingHours = _getVisitingHours(doctor);
-
-    // Debug
-    debugPrint('📋 See All: ${doctor.fullName}');
-    debugPrint('   - hasVideoCall: $hasVideoCall');
 
     return GestureDetector(
       onTap: () {

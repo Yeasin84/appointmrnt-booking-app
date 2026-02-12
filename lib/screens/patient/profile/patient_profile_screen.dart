@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../screens/auth/sign_in_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aroggyapath/providers/locale_provider.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class PatientProfileScreen extends ConsumerStatefulWidget {
   const PatientProfileScreen({super.key});
@@ -45,12 +46,15 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
     final currentLocale = ref.watch(localeProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getSurface(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getSurface(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0B3267)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AppColors.getTextPrimary(context),
+          ),
           onPressed: () {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
@@ -67,8 +71,8 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
         ),
         title: Text(
           l10n.appTitle,
-          style: const TextStyle(
-            color: Color(0xFF0B3267),
+          style: TextStyle(
+            color: AppColors.getTextPrimary(context),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -122,10 +126,10 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
 
                 Text(
                   userName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0B3267),
+                    color: AppColors.getTextPrimary(context),
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -139,9 +143,9 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                     Flexible(
                       child: Text(
                         userLocation,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: AppColors.getTextSecondary(context),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -215,7 +219,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                       vertical: 15,
                     ),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(color: AppColors.getBorder(context)),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
@@ -225,9 +229,9 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                         Expanded(
                           child: Text(
                             l10n.changeLanguage,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              color: Color(0xFF0B3267),
+                              color: AppColors.getTextPrimary(context),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -285,9 +289,9 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                                 currentLocale.languageCode == 'en'
                                     ? l10n.english
                                     : l10n.bangla, // Display current language
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFF0B3267),
+                                  color: AppColors.getTextPrimary(context),
                                 ),
                               ),
                               const Icon(Icons.keyboard_arrow_down),
@@ -436,24 +440,28 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
         child: Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: AppColors.getBorder(context)),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
-              Icon(icon, color: const Color(0xFF1664CD)),
+              Icon(icon, color: AppColors.primary),
               const SizedBox(width: 15),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: Color(0xFF0B3267),
+                    color: AppColors.getTextPrimary(context),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppColors.getTextSecondary(context),
+              ),
             ],
           ),
         ),

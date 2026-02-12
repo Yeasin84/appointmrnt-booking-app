@@ -54,7 +54,7 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.getSurface(context),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.08),
@@ -70,8 +70,22 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
               _currentIndex = index;
             });
           },
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.getSurface(context),
           indicatorColor: AppColors.primarySoft,
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              );
+            }
+            return TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: AppColors.getTextSecondary(context),
+            );
+          }),
           elevation: 0,
           destinations: [
             NavigationDestination(
@@ -157,7 +171,10 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(
+                  color: AppColors.getSurface(context),
+                  width: 2,
+                ),
               ),
             ),
           ),

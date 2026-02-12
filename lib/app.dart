@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:aroggyapath/utils/app_theme.dart';
 import 'package:aroggyapath/providers/locale_provider.dart';
+import 'package:aroggyapath/providers/theme_provider.dart';
 import 'package:aroggyapath/services/auth_service.dart';
 
 class MyApp extends ConsumerStatefulWidget {
@@ -127,6 +128,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final currentLocale = ref.watch(localeProvider);
+    final currentThemeMode = ref.watch(themeProvider);
 
     return MaterialApp(
       navigatorKey: _navigatorKey, // ✅ ADDED for CallManager
@@ -141,6 +143,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
 
       supportedLocales: const [Locale('en'), Locale('bn')],
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: currentThemeMode,
       debugShowCheckedModeBanner: false,
 
       home: _buildHomeScreen(),

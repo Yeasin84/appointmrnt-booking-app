@@ -14,6 +14,7 @@ import 'package:aroggyapath/providers/doctor_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aroggyapath/providers/locale_provider.dart';
+import 'package:aroggyapath/providers/theme_provider.dart';
 import 'package:aroggyapath/utils/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -53,7 +54,10 @@ void main() async {
   final savedLocaleCode = await getSavedLocaleCode();
   final initialLocale = Locale(savedLocaleCode ?? 'en');
 
-  // 3. Load token (fast - no network calls)
+  // 3. Load saved theme mode for immediate application startup
+  final savedThemeMode = await getSavedThemeMode();
+
+  // 4. Load token (fast - no network calls)
   await ApiService.init();
   final isLoggedIn = ApiService.isLoggedIn;
   debugPrint('🔍 Token status: ${isLoggedIn ? "Logged In" : "Not Logged In"}');
@@ -69,6 +73,10 @@ void main() async {
         // We initialize the localeProvider with the saved locale to avoid flicker
         localeProvider.overrideWith(
           () => LocaleNotifier()..setInitialLocale(initialLocale),
+        ),
+        // We initialize the themeProvider with the saved theme mode to avoid flicker
+        themeProvider.overrideWith(
+          () => ThemeNotifier()..setInitialThemeMode(savedThemeMode),
         ),
       ],
       child: legacy_provider.MultiProvider(

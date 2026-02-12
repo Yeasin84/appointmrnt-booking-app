@@ -102,6 +102,10 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
           _currentPosition = LatLng(position.latitude, position.longitude);
           _isLoadingLocation = false;
         });
+
+        // ✅ Update Provider with location so "See All" screen can use it for distance
+        context.read<DoctorProvider>().updateLocation(_currentPosition);
+
         if (_isMapReady) _mapController.move(_currentPosition, 14);
         _addDoctorMarkers();
       }
@@ -210,7 +214,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     final userProvider = legacy_provider.Provider.of<UserProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.getBackground(context),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _onRefresh,

@@ -8,6 +8,7 @@ import 'package:aroggyapath/services/api_service.dart';
 import 'package:aroggyapath/screens/auth/sign_in_screen.dart';
 import 'package:aroggyapath/models/post_model.dart';
 import 'package:aroggyapath/providers/user_provider.dart';
+import 'package:aroggyapath/utils/colors.dart';
 import 'dart:async';
 
 import 'widgets/doctor_home_header.dart';
@@ -364,7 +365,7 @@ class _DoctorHomeScreenState extends ConsumerState<DoctorHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
+      backgroundColor: AppColors.getBackground(context),
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: CustomScrollView(

@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 // New Imports
 import 'reels_viewer_screen.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class DoctorReelsScreen extends StatefulWidget {
   const DoctorReelsScreen({super.key});
@@ -127,13 +128,16 @@ class _DoctorReelsScreenState extends State<DoctorReelsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.getSurface(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getSurface(context),
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AppColors.getTextPrimary(context),
+          ),
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
@@ -146,8 +150,8 @@ class _DoctorReelsScreenState extends State<DoctorReelsScreen> {
         ),
         title: Text(
           AppLocalizations.of(context)!.reelsLabel,
-          style: const TextStyle(
-            color: Color(0xFF1A1A1A),
+          style: TextStyle(
+            color: AppColors.getTextPrimary(context),
             fontWeight: FontWeight.w600,
             fontSize: 18,
           ),

@@ -11,6 +11,7 @@ import 'widgets/pending_appointment_card.dart';
 import 'widgets/confirmed_appointment_card.dart';
 import 'widgets/completed_appointment_card.dart';
 import 'widgets/appointment_details_sheet.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class DoctorAppointmentsScreen extends StatefulWidget {
   const DoctorAppointmentsScreen({super.key});
@@ -35,12 +36,15 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
+      backgroundColor: AppColors.getBackground(context),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFF),
+        backgroundColor: AppColors.getBackground(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AppColors.getTextPrimary(context),
+          ),
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
@@ -51,10 +55,10 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
             );
           },
         ),
-        title: const Text(
+        title: Text(
           'Appointment Management',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.getTextPrimary(context),
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -290,7 +294,9 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1664CD) : const Color(0xFFE9F0FF),
+          color: isSelected
+              ? AppColors.primary
+              : AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(

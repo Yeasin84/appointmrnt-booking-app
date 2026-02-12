@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/sign_in_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aroggyapath/providers/locale_provider.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class DoctorProfileScreen extends ConsumerStatefulWidget {
   const DoctorProfileScreen({super.key});
@@ -140,12 +141,15 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     final currentLocale = ref.watch(localeProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
+      backgroundColor: AppColors.getBackground(context),
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0B3267)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AppColors.getTextPrimary(context),
+          ),
           onPressed: () {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
@@ -163,8 +167,8 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
         automaticallyImplyLeading: false,
         title: Text(
           l10n.appTitle, // Using localized title
-          style: const TextStyle(
-            color: Color(0xFF1B2C49),
+          style: TextStyle(
+            color: AppColors.getTextPrimary(context),
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
@@ -237,17 +241,17 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                         const SizedBox(height: 12),
                         Text(
                           userName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1B2C49),
+                            color: AppColors.getTextPrimary(context),
                           ),
                         ),
                         Text(
                           userRole.toUpperCase(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey,
+                            color: AppColors.getTextSecondary(context),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -273,15 +277,15 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                             margin: const EdgeInsets.symmetric(horizontal: 25),
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE9F0FF),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               user.bio!,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF1B2C49),
+                                color: AppColors.getTextPrimary(context),
                                 height: 1.5,
                               ),
                             ),
@@ -539,7 +543,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 25, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFE9F0FF),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(15),
       ),
       child: ListTile(
@@ -547,12 +551,12 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: AppColors.getSurface(context),
             shape: BoxShape.circle,
           ),
           child: icon != null
-              ? Icon(icon, color: const Color(0xFF1B2C49), size: 22)
+              ? Icon(icon, color: AppColors.getTextPrimary(context), size: 22)
               : Image.asset(
                   assetIconPath!,
                   width: 22,
@@ -562,18 +566,18 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: Color(0xFF1B2C49),
+            color: AppColors.getTextPrimary(context),
             fontWeight: FontWeight.w600,
           ),
         ),
         trailing:
             trailing ??
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: Color(0xFF1B2C49),
+              color: AppColors.getTextPrimary(context),
             ),
       ),
     );

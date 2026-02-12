@@ -7,6 +7,7 @@ import 'package:aroggyapath/providers/appointment_provider.dart';
 import 'package:aroggyapath/screens/patient/appointments/appointment_detail_screen.dart';
 import 'package:aroggyapath/screens/patient/navigation/patient_main_navigation.dart';
 import 'package:aroggyapath/services/api_service.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class PatientAppointmentsScreen extends StatefulWidget {
   const PatientAppointmentsScreen({super.key});
@@ -45,7 +46,7 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
         _handleBackPress();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F8FF),
+        backgroundColor: AppColors.getBackground(context),
         body: Consumer<AppointmentProvider>(
           builder: (context, appointmentProvider, child) {
             return Column(
@@ -56,9 +57,9 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.arrow_back,
-                            color: Color(0xFF1A1A1A),
+                            color: AppColors.getTextPrimary(context),
                           ),
                           // onPressed: _handleBackPress,
                           onPressed: () {
@@ -77,8 +78,8 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
                         const SizedBox(width: 8),
                         Text(
                           l10n.myAppointment,
-                          style: const TextStyle(
-                            color: Color(0xFF1A1A1A),
+                          style: TextStyle(
+                            color: AppColors.getTextPrimary(context),
                             fontWeight: FontWeight.w600,
                             fontSize: 22,
                           ),
@@ -147,7 +148,7 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
                 context.read<AppointmentProvider>().fetchAppointments();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D53C1),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 30,
                   vertical: 12,
@@ -216,7 +217,9 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: active ? const Color(0xFF0D53C1) : const Color(0xFFE8EEF9),
+            color: active
+                ? AppColors.primary
+                : AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
@@ -278,7 +281,7 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
         margin: const EdgeInsets.only(bottom: 20),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.getSurface(context),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -336,9 +339,9 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
                       ),
                       Text(
                         appointment.specialty ?? 'Specialist',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: AppColors.getTextSecondary(context),
                         ),
                       ),
 
@@ -391,7 +394,7 @@ class _PatientAppointmentsScreenState extends State<PatientAppointmentsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8EEF9),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(

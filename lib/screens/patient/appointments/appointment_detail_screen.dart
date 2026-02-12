@@ -5,6 +5,7 @@ import 'package:aroggyapath/models/appointment_model.dart';
 import 'package:aroggyapath/services/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:aroggyapath/providers/appointment_provider.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class AppointmentDetailScreen extends StatelessWidget {
   final AppointmentModel appointment;
@@ -14,18 +15,21 @@ class AppointmentDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE5EEFF),
+      backgroundColor: AppColors.getBackground(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getSurface(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0B3267)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AppColors.getTextPrimary(context),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Appointment Details',
           style: TextStyle(
-            color: Color(0xFF0B3267),
+            color: AppColors.getTextPrimary(context),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -39,7 +43,7 @@ class AppointmentDetailScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.getSurface(context),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Row(
@@ -52,10 +56,10 @@ class AppointmentDetailScreen extends StatelessWidget {
                       children: [
                         Text(
                           appointment.doctorName ?? 'Doctor',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF0B3267),
+                            color: AppColors.getTextPrimary(context),
                           ),
                         ),
                         const SizedBox(height: 5),
@@ -63,7 +67,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                           appointment.specialty ?? 'Specialist',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.getTextSecondary(context),
                           ),
                         ),
                         const SizedBox(height: 5),
@@ -125,24 +129,27 @@ class AppointmentDetailScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.getSurface(context),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Column(
                 children: [
                   _buildInfoRow(
+                    context,
                     Icons.calendar_today,
                     'Date',
                     appointment.formattedDate,
                   ),
                   const Divider(height: 30),
                   _buildInfoRow(
+                    context,
                     Icons.access_time,
                     'Time',
                     appointment.appointmentTime,
                   ),
                   const Divider(height: 30),
                   _buildInfoRow(
+                    context,
                     appointment.appointmentType == 'video'
                         ? Icons.videocam
                         : Icons.medical_services,
@@ -153,7 +160,12 @@ class AppointmentDetailScreen extends StatelessWidget {
                   ),
                   if (appointment.notes != null) ...[
                     const Divider(height: 30),
-                    _buildInfoRow(Icons.note, 'Notes', appointment.notes!),
+                    _buildInfoRow(
+                      context,
+                      Icons.note,
+                      'Notes',
+                      appointment.notes!,
+                    ),
                   ],
                 ],
               ),
@@ -203,7 +215,12 @@ class AppointmentDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
     return Row(
       children: [
         Container(
@@ -223,15 +240,18 @@ class AppointmentDetailScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.getTextSecondary(context),
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0B3267),
+                  color: AppColors.getTextPrimary(context),
                 ),
               ),
             ],
@@ -254,7 +274,7 @@ class AppointmentDetailScreen extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isOutlined ? Colors.white : color,
+          backgroundColor: isOutlined ? AppColors.getSurface(context) : color,
           foregroundColor: isOutlined ? color : Colors.white,
           side: isOutlined ? BorderSide(color: color, width: 2) : null,
           shape: RoundedRectangleBorder(

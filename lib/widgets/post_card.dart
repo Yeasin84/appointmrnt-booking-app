@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:aroggyapath/providers/user_provider.dart';
 // import 'package:share_plus/share_plus.dart';
 import 'package:aroggyapath/widgets/custom_image.dart';
+import 'package:aroggyapath/utils/colors.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -220,87 +221,6 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
-  // void _showShareOptions() {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  //     ),
-  //     builder: (context) {
-  //       return Container(
-  //         padding: const EdgeInsets.symmetric(vertical: 20),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             Padding(
-  //               padding: const EdgeInsets.all(16.0),
-  //               child: Text(
-  //                 AppLocalizations.of(context)!.sharePost,
-  //                 style: const TextStyle(
-  //                   fontSize: 18,
-  //                   fontWeight: FontWeight.bold,
-  //                 ),
-  //               ),
-  //             ),
-  //             ListTile(
-  //               leading: const Icon(Icons.share, color: Colors.blue),
-  //               title: Text(AppLocalizations.of(context)!.shareExternally),
-  //               onTap: () {
-  //                 Navigator.pop(context);
-  //                 _shareExternal();
-  //               },
-  //             ),
-  //             ListTile(
-  //               leading: const Icon(Icons.message, color: Colors.green),
-  //               title: Text(AppLocalizations.of(context)!.sendMessage),
-  //               onTap: () {
-  //                 Navigator.pop(context);
-  //                 final l10n = AppLocalizations.of(context)!;
-  //                 ScaffoldMessenger.of(context).showSnackBar(
-  //                   SnackBar(
-  //                     content: Text(l10n.shareMessageComingSoon),
-  //                     backgroundColor: Colors.blue,
-  //                   ),
-  //                 );
-  //               },
-  //             ),
-  //             ListTile(
-  //               leading: const Icon(Icons.cancel),
-  //               title: Text(AppLocalizations.of(context)!.cancel),
-  //               onTap: () => Navigator.pop(context),
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
-  // Future<void> _shareExternal() async {
-  //   try {
-  //     final l10n = AppLocalizations.of(context)!;
-  //     String shareText =
-  //         '${l10n.authorPosted(_currentPost.author.fullName)}\n\n';
-  //     shareText += _currentPost.content;
-
-  //     if (_currentPost.media.isNotEmpty) {
-  //       final images = _currentPost.media.where((m) => m.isImage).toList();
-  //       final videos = _currentPost.media.where((m) => m.isVideo).toList();
-
-  //       if (images.isNotEmpty) {
-  //         shareText += '\n\n📷 ${l10n.imagesCount(images.length)}';
-  //       }
-  //       if (videos.isNotEmpty) {
-  //         shareText += '\n\n🎥 ${l10n.videosCount(videos.length)}';
-  //       }
-  //     }
-
-  //     await Share.share(shareText);
-  //   } catch (e) {
-  //     print('❌ Error sharing: $e');
-  //   }
-  // }
-
   void _showComments() {
     showModalBottomSheet(
       context: context,
@@ -326,7 +246,7 @@ class _PostCardState extends State<PostCard> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.getSurface(context),
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -366,9 +286,10 @@ class _PostCardState extends State<PostCard> {
                           children: [
                             Text(
                               _currentPost.author.fullName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: AppColors.getTextPrimary(context),
                               ),
                             ),
                             if (_currentPost.author.role == 'doctor')
@@ -406,7 +327,10 @@ class _PostCardState extends State<PostCard> {
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
               child: Text(
                 _currentPost.content,
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.getTextPrimary(context),
+                ),
               ),
             ),
 
@@ -849,16 +773,20 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                color: AppColors.getSurface(context),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.getBorder(context)),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     AppLocalizations.of(context)!.commentsLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: AppColors.getTextPrimary(context),
                     ),
                   ),
                   IconButton(
@@ -919,8 +847,10 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             Container(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                color: AppColors.getSurface(context),
+                border: Border(
+                  top: BorderSide(color: AppColors.getBorder(context)),
+                ),
               ),
               child: SafeArea(
                 child: Row(
